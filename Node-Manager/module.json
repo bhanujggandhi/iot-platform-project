@@ -1,0 +1,9 @@
+{
+  "modules": [
+    "api-manager",
+    "application-manager",
+    "load-balancer",
+    "monitoring-service",
+    "sensor-manager"
+  ]
+}
