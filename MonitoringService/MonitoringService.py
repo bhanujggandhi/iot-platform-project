@@ -14,6 +14,7 @@ MONITORING SERVICE:
 
     Assumes:
     * Node Manager is always up
+    * API Manager is up when traffic data is asked
 """
 import requests
 import json
@@ -44,8 +45,8 @@ def getHealthStatus(IP: str, PORT: str) -> bool:
 
 
 def healthCheck(service_info: dict) -> None:
-    # Iterate through the global list containing the IP:PORT of
-    # each service and get the health status of each service
+    """Iterate through the global list containing the IP:PORT of
+    each service and get the health status of each service"""
 
     for service_name, socket_address in service_info.items():
         IP = socket_address["IP"]
@@ -76,6 +77,50 @@ def healthCheck(service_info: dict) -> None:
             print(f"{service_name}: [UP]")
 
 
+def getTrafficLogs(service_info) -> dict:
+    """Get the traffic logs from the API Manager module"""
+
+    # get the IP and PORT of APIManager
+    try:
+        socket_address = service_info["APIManager"]
+        IP = socket_address["IP"]
+        PORT = socket_address["PORT"]
+    except Exception as e:
+        print(f"{e} is not in list of services")
+        return dict()
+
+    api_url = f"http://{IP}:{PORT}/traffic_logs"
+    # get the response from the module at IP:PORT
+    try:
+        response = requests.get(api_url)
+        return response
+
+    except Exception as e:
+        print(e)
+        return dict()
+
+
+def extractQoSValues(traffic_logs: dict) -> None:
+    for microservice_name, logs in traffic_logs.items():
+        requests = logs["requests"]
+        responses = logs["responses"]
+
+        total = min(len(requests), len(responses))
+
+        response_times = []
+
+        for query in range(total):
+            response_times.append(responses[query] - requests[query])
+
+        print(f"Reponse Time for {microservice_name}: ")
+        print(response_times)
+
+
 if __name__ == "__main__":
     service_info = getServiceInfo("./dummyBoostrapResponse.json")
     healthCheck(service_info)
+    # traffic_logs = getTrafficLogs(service_info)
+    with open("./dummyTrafficLogs.json") as f:
+        traffic_logs = json.load(f)
+
+    extractQoSValues(traffic_logs)
