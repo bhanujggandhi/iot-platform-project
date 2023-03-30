@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Run Python File</title>
+  </head>
+  <body>
+    <h1>Run Python File</h1>
+    <form action="/run" method="post">
+      <label for="file_path">File Path:</label>
+      <input type="text" id="file_path" name="file_path" />
+      <br /><br />
+      <label for="command">Command:</label>
+      <input type="text" id="command" name="command" />
+      <br /><br />
+      <input type="submit" value="Run" />
+    </form>
+    {% if command %}
+    <p>Command: {{ command }}</p>
+    {% endif %} {% if output %}
+    <p>Output:</p>
+    <pre>{{ output }}</pre>
+    {% endif %}
+  </body>
+</html>
