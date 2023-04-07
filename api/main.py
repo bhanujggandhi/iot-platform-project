@@ -2,9 +2,10 @@ import os
 import shutil
 from typing import Union
 
-from fastapi import FastAPI, File, HTTPException, Response, UploadFile, status
+from auth.jwt_bearer import JWTBearer
+from auth.jwt_handler import decodeJWT, signJWT
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile, status
 from utils.verify_zip import verify_zip
-from auth.jwt_handler import signJWT, decodeJWT
 
 app = FastAPI()
 
@@ -14,8 +15,8 @@ async def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/deploy/upload", tags=["deployement"])
-async def get_zip_file(file: UploadFile = File(...)):
+@app.post("/deploy/upload", dependencies=[Depends(JWTBearer())], tags=["deployement"])
+async def upload_zip_file(file: UploadFile = File(...)):
     """
     Api to server upload zip file requets in order for developer to deploy
     """
