@@ -88,6 +88,11 @@ sudo systemctl enable kafka
 # create a topic in kafka
 ~/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic TutorialTopic
 
+# list topics in kafka
+ ~/kafka/bin/kafka-topics.sh --bootstrap-server 192.168.137.185:9092 --list
+    OR
+ ~kafka/bin/kafka-topics.sh --list --zookeeper localhost:2181
+
 # start a terminal producer session
 ~/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
 
