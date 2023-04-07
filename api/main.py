@@ -1,3 +1,4 @@
+import os
 import shutil
 from typing import Union
 
@@ -13,14 +14,22 @@ async def read_root():
 
 
 @app.post("/deploy/upload")
-async def get_zip_file(res: Response, file: UploadFile = File(...)):
+async def get_zip_file(file: UploadFile = File(...)):
+    """
+    Api to server upload zip file requets in order for developer to deploy
+    """
+
+    # Check filetype
     if file.content_type != "application/zip":
         raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
+
+    # Copy file to local disk
     with open(f"{file.filename}", "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    if not verify_zip(f"{file.filename}"):
-        res.status_code = status.HTTP_200_OK
-        return {"res": "uploaded"}
+    # Verify file structure
+    if verify_zip(f"{file.filename}"):
+        return {"detail": "uploaded"}
     else:
+        os.remove(file.filename)
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
