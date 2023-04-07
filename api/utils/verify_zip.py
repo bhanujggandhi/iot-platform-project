@@ -4,7 +4,7 @@ from zipfile import ZipFile
 
 def verify_zip(path: str):
     """
-    Function to verify if the must have files mentioned in docs/deployement.md are prrsent
+    Function to verify if the must have files mentioned in docs/deployement.md are present
     """
     filechecks = {"requirements.txt": False, "main.py": False, "package.json": False}
     with ZipFile(path) as zip_file:
