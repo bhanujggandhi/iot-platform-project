@@ -8,11 +8,11 @@ from utils.jwt_handler import decodeJWT, signJWT
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile, status
 from utils.verify_zip import verify_zip
 
-from routers import users, deployement
+from routers import user, deployement
 
 app = FastAPI()
 
-app.include_router(users.router, prefix="/users")
+app.include_router(user.router, prefix="/user")
 app.include_router(deployement.router, prefix="/deploy")
 
 
