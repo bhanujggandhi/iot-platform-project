@@ -4,7 +4,7 @@ This file is responsible for
 - check wheather the request is authorized or not (middleware)
 """
 
-from auth.jwt_handler import decodeJWT
+from utils.jwt_handler import decodeJWT
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
