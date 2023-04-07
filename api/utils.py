@@ -3,14 +3,18 @@ from zipfile import ZipFile
 
 
 def verify_zip(path: str):
+    """
+    Function to verify if the must have files mentioned in docs/deployement.md are prrsent
+    """
+    filechecks = {"requirements.txt": False, "main.py": False, "package.json": False}
     with ZipFile(path) as zip_file:
-        filelist = []
         for member in zip_file.namelist():
             member = member.split("/")
-            if member[1] == "main.py":
-                # os.remove(path)
-                # Upload to cloud
-                return True
+            if member[1] in filechecks.keys():
+                filechecks[member[1]] = True
 
-        os.remove(path)
+    if False in filechecks.values():
         return False
+    else:
+        # Upload to the cloud
+        return True
