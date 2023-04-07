@@ -3,17 +3,18 @@ import shutil
 from typing import Union
 
 from fastapi import FastAPI, File, HTTPException, Response, UploadFile, status
-from utils import verify_zip
+from utils.verify_zip import verify_zip
+from auth.jwt_handler import signJWT, decodeJWT
 
 app = FastAPI()
 
 
-@app.get("/")
+@app.get("/", tags=["test"])
 async def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/deploy/upload")
+@app.post("/deploy/upload", tags=["deployement"])
 async def get_zip_file(file: UploadFile = File(...)):
     """
     Api to server upload zip file requets in order for developer to deploy
@@ -33,3 +34,13 @@ async def get_zip_file(file: UploadFile = File(...)):
     else:
         os.remove(file.filename)
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
+
+
+@app.get("/apitoken/generate/{userid}", tags=["deployement"])
+async def generate_token(userid: str):
+    return signJWT(userid)
+
+
+@app.get("/apitoken/verify/{token}", tags=["deployement"])
+async def generate_token(token: str):
+    return decodeJWT(token)
