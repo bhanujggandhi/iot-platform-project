@@ -1,30 +1,49 @@
 import asyncio
+import os
+import shutil
+from typing import List, Union
+
 import uvicorn
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routers import deployement, tasks, user
+from utils.jwt_handler import decodeJWT, signJWT
 
-from api import app as api_app
-from scheduler import app as scheduler_app
-
-
-class Server(uvicorn.Server):
-    """Customized uvicorn.Server
-
-    Uvicorn server overrides signals and we need to include
-    Rocketry to the signals."""
-
-    def handle_exit(self, sig: int, frame) -> None:
-        scheduler_app.session.shut_down()
-        return super().handle_exit(sig, frame)
+app = FastAPI(
+    title="Internal APIs",
+    description="This API module contains all the platform's internal APIs that will be required by platform to work",
+)
 
 
-async def main():
-    "Run scheduler and the API"
-    server = Server(config=uvicorn.Config(api_app, workers=1, loop="asyncio"))
+"""
+Enable CORS so that the React application can communicate with FastAPI. 
 
-    api = asyncio.create_task(server.serve())
-    sched = asyncio.create_task(scheduler_app.serve())
+Need modify these when in production.
+"""
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    await asyncio.wait([sched, api])
+
+app.include_router(user.router, prefix="/user", tags=["user"])
+app.include_router(deployement.router, prefix="/deploy", tags=["deployement"])
+# app.include_router(tasks.router)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+@app.get("/", tags=["test"])
+async def read_root():
+    return {"Hello": "World"}
+
+
+@app.get("/apitoken/generate/{userid}", tags=["auth"])
+async def generate_token(userid: str):
+    return signJWT(userid)
+
+
+@app.get("/apitoken/verify/{token}", tags=["auth"])
+async def verify_token(token: str):
+    return decodeJWT(token)

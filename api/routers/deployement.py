@@ -1,16 +1,21 @@
+import asyncio
 import os
 import shutil
 import sys
 
 import uvicorn
-from fastapi import Depends, File, HTTPException, UploadFile, APIRouter
-
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from utils.jwt_bearer import JWTBearer
 from utils.verify_zip import verify_zip
 
 sys.path.append("..")
 
 router = APIRouter()
+
+
+async def my_task():
+    await asyncio.sleep(10)
+    print("Task Deployed")
 
 
 @router.post("/upload", dependencies=[Depends(JWTBearer())])
@@ -33,3 +38,9 @@ async def upload_zip_file(file: UploadFile = File(...)):
     else:
         os.remove(file.filename)
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
+
+
+@router.post("/schedule-task")
+async def schedule_task(background_tasks: BackgroundTasks):
+    background_tasks.add_task(my_task)
+    return {"message": "Task scheduled"}
