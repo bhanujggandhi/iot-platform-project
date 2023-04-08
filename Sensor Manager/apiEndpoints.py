@@ -35,9 +35,9 @@ async def log_requests(request: Request, call_next):
     try:
         body = await request.body()
         body = json.loads(body.decode("utf-8"))
-        print(body)
     except:
         body = None
+        
     response = await call_next(request)
     if response.status_code >= 400:
         error_message = response.json().get("error") or response.text
@@ -45,7 +45,7 @@ async def log_requests(request: Request, call_next):
     else:
         logger.info(f"{request.method} {request.url.path} - {response.status_code} - {body}")
         
-    return await call_next(request)
+    return response
 
 
 
