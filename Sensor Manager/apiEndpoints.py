@@ -5,19 +5,17 @@ import json
 from fastapi import APIRouter
 from pymongo import MongoClient
 import uuid
+from decouple import config
 import logging
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 
-fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
+
 Headers = {'X-M2M-Origin': 'admin:admin',
            'Content-Type': 'application/json;ty=4'}
 
-mongoKey = ""
-# get MongoDB key from config file
-with open('config.ini') as f:
-    config = json.load(f)
-    mongoKey = config['mongoKey']
+mongoKey = config('mongoKey')
+fetchAPI = config('Om2mFetchAPI')
 
 
 app = FastAPI()
@@ -52,7 +50,7 @@ async def log_requests(request: Request, call_next):
 
 
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "", startTime: str = None, endTime: str = None):
+async def fetch(sensorID: str = "", fetchType: str = "", startTime: int = None, endTime: int = None):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
@@ -62,16 +60,20 @@ async def fetch(sensorID: str = "", fetchType: str = "", startTime: str = None, 
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorData
+    # find all data in DB
     if fetchType == "TimeSeries":
-        data = collection.find({"sensorID": sensorID})["data"]
-        # data is array of lists in the form of [timestamp,opt,value]
-        timeseriesdata = []
-        for i in data:
-            i = list(i)
-            epochtime = i[0]
-            if epochtime >= startTime and epochtime <= endTime:
-                timeseriesdata.append(i)
-        return {"data": timeseriesdata}
+        data = collection.find({"sensorID": sensorID})
+        timeSeriesData = []
+        for cur in data:
+            cur = cur["data"]
+            for d in cur:
+                # d =  "[1680961091, 1, 117]"  sample
+                timestamp = int(d[1:-1].split(",")[0])
+                # if timestamp >= startTime and timestamp <= endTime:
+                if (startTime <= timestamp) and (timestamp <= endTime):
+                    timeSeriesData.append(d)
+
+        return timeSeriesData
 
     # res = requests.get(fetchAPI, headers=Headers)
     # if res.status_code == 200:
