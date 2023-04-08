@@ -13,8 +13,8 @@ sys.path.append("..")
 router = APIRouter()
 
 
-async def my_task():
-    await asyncio.sleep(10)
+async def my_task(time: int):
+    await asyncio.sleep(time)
     # Logic or api call will come here to deploy
     print("Task Deployed")
 
@@ -43,6 +43,6 @@ async def upload_zip_file(file: UploadFile = File(...)):
 
 
 @router.post("/schedule")
-async def schedule_task(background_tasks: BackgroundTasks):
-    background_tasks.add_task(my_task)
+async def schedule_task(background_tasks: BackgroundTasks, time: int = 0):
+    background_tasks.add_task(my_task, time)
     return {"message": "Task scheduled"}
