@@ -44,7 +44,7 @@ def getSensorID(sensorLabels):
     return sensorIDs
 
 
-def SensorData(freq=1):
+def SensorData(freq=10, datathreshold=50):
     # This function will be responsible for fetching the data from Om2m and sending the data to MongoDB for storage.
     # when 50 instances of a particular sensor type are stored in the database, the oldest instance will be deleted
     # to make space for the new instance
@@ -75,9 +75,17 @@ def SensorData(freq=1):
                     # append the data to the existing sensor type
                     currData = collection.find_one(
                         {"sensorType": i})["data"]
+                    # print(currData, type(currData))
                     currData.extend(sensorData[i])
                     collection.update_one({"sensorType": i}, {
                         "$set": {"data": currData}})
+
+            for i in sensors:
+                data = collection.find_one({"sensorType": i})["data"]
+                if len(data) > datathreshold:
+                    data = data[-datathreshold:]
+                collection.update_one({'_id': collection.find_one(
+                    {"sensorType": i})['_id']}, {'$set': {'data': data}})
 
         else:
             print("Error: ", res.status_code)
@@ -100,7 +108,7 @@ def ReqstManager():
     This function will be endpoint for all the API requests received from the client , it will redirect the request to the
     SensorManager for processing and will send the response back to the client.
     """
-    pass
+    # create a server listening for requests
 
 
 def SensorStream():

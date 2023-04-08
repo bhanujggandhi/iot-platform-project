@@ -28,11 +28,25 @@ async def fetch(sensorID: str = "", fetchType: str = "", startTime: str = None, 
     1.TimeSeries Data
     2.RealTime Stream
     """
-    res = requests.get(fetchAPI, headers=Headers)
-    if res.status_code == 200:
-        return res.json()
-    else:
-        return {"error": res.status_code}
+    client = MongoClient(mongoKey)
+    db = client.SensorDB
+    collection = db.SensorData
+    if fetchType == "TimeSeries":
+        data = collection.find({"sensorID": sensorID})["data"]
+        # data is array of lists in the form of [timestamp,opt,value]
+        timeseriesdata = []
+        for i in data:
+            i = list(i)
+            epochtime = i[0]
+            if epochtime >= startTime and epochtime <= endTime:
+                timeseriesdata.append(i)
+        return {"data": timeseriesdata}
+
+    # res = requests.get(fetchAPI, headers=Headers)
+    # if res.status_code == 200:
+    #     return res.json()
+    # else:
+    #     return {"error": res.status_code}
 
 
 @app.post("/register")
@@ -54,7 +68,7 @@ async def register(sensorName: str = "", sensorType: str = "", sensorLocation: s
 
 
 @app.get("/bind")
-async def bind(sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
+async def bind(devId: str = None, sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
     """
     This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
     """
@@ -89,3 +103,6 @@ async def deregister(sensorID: str = ""):
     sensor = {"sensorID": sensorID}
     collection.delete_one(sensor)
     return {"status": "success"}
+
+
+# @app.
