@@ -5,16 +5,13 @@ import json
 from fastapi import APIRouter
 from pymongo import MongoClient
 import uuid
+from decouple import config
 
-fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
 Headers = {'X-M2M-Origin': 'admin:admin',
            'Content-Type': 'application/json;ty=4'}
 
-mongoKey = ""
-# get MongoDB key from config file
-with open('config.ini') as f:
-    config = json.load(f)
-    mongoKey = config['mongoKey']
+mongoKey = config('mongoKey')
+fetchAPI = config('Om2mFetchAPI')
 
 
 app = FastAPI()
