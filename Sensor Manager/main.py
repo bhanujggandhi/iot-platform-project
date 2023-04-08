@@ -34,6 +34,16 @@ def processData(data):
     return sensorData
 
 
+def getSensorID(sensorLabels):
+    sensorIDs = {}
+    for i in sensorLabels:
+        client = MongoClient(mongoKey)
+        db = client.SensorDB
+        collection = db.SensorMetadata
+        sensorIDs[i] = collection.find_one({"sensorName": i})["sensorID"]
+    return sensorIDs
+
+
 def SensorData(freq=1):
     # This function will be responsible for fetching the data from Om2m and sending the data to MongoDB for storage.
     # when 50 instances of a particular sensor type are stored in the database, the oldest instance will be deleted
@@ -48,6 +58,8 @@ def SensorData(freq=1):
             db = client.SensorDB
             collection = db.SensorData
             sensors = sensorData.keys()
+            sensorIds = getSensorID(sensors)
+
             # check if count of documents with a particular sensor type is if 50, delete the the oldest 10 documents where the first entry in data is timestamp
 
             for i in sensors:
@@ -58,7 +70,7 @@ def SensorData(freq=1):
             for i in sensors:
                 if collection.count_documents({"sensorType": i}) == 0:
                     collection.insert_one(
-                        {"sensorType": i, "data": sensorData[i]})
+                        {"sensorType": i, "data": sensorData[i], "sensorID": sensorIds[i]})
                 else:
                     # append the data to the existing sensor type
                     currData = collection.find_one(
