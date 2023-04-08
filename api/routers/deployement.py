@@ -13,7 +13,7 @@ sys.path.append("..")
 router = APIRouter()
 
 
-@router.post("/upload", dependencies=[Depends(JWTBearer())], tags=["deployement"])
+@router.post("/upload", dependencies=[Depends(JWTBearer())])
 async def upload_zip_file(file: UploadFile = File(...)):
     """
     Api to server upload zip file requets in order for developer to deploy

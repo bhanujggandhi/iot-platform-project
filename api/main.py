@@ -1,31 +1,30 @@
-import os
-import shutil
-from typing import Union
+import asyncio
 import uvicorn
 
-from utils.jwt_bearer import JWTBearer
-from utils.jwt_handler import decodeJWT, signJWT
-from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile, status
-from utils.verify_zip import verify_zip
-
-from routers import user, deployement
-
-app = FastAPI()
-
-app.include_router(user.router, prefix="/user")
-app.include_router(deployement.router, prefix="/deploy")
+from api import app as api_app
+from scheduler import app as scheduler_app
 
 
-@app.get("/", tags=["test"])
-async def read_root():
-    return {"Hello": "World"}
+class Server(uvicorn.Server):
+    """Customized uvicorn.Server
+
+    Uvicorn server overrides signals and we need to include
+    Rocketry to the signals."""
+
+    def handle_exit(self, sig: int, frame) -> None:
+        scheduler_app.session.shut_down()
+        return super().handle_exit(sig, frame)
 
 
-@app.get("/apitoken/generate/{userid}", tags=["auth"])
-async def generate_token(userid: str):
-    return signJWT(userid)
+async def main():
+    "Run scheduler and the API"
+    server = Server(config=uvicorn.Config(api_app, workers=1, loop="asyncio"))
+
+    api = asyncio.create_task(server.serve())
+    sched = asyncio.create_task(scheduler_app.serve())
+
+    await asyncio.wait([sched, api])
 
 
-@app.get("/apitoken/verify/{token}", tags=["auth"])
-async def verify_token(token: str):
-    return decodeJWT(token)
+if __name__ == "__main__":
+    asyncio.run(main())
