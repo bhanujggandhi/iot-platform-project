@@ -16,5 +16,4 @@ def verify_zip(path: str):
     if False in filechecks.values():
         return False
     else:
-        # Upload to the cloud
         return True

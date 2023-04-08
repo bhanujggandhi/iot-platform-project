@@ -15,10 +15,11 @@ router = APIRouter()
 
 async def my_task():
     await asyncio.sleep(10)
+    # Logic or api call will come here to deploy
     print("Task Deployed")
 
 
-@router.post("/upload", dependencies=[Depends(JWTBearer())])
+@router.post("/", dependencies=[Depends(JWTBearer())])
 async def upload_zip_file(file: UploadFile = File(...)):
     """
     Api to server upload zip file requets in order for developer to deploy
@@ -34,13 +35,14 @@ async def upload_zip_file(file: UploadFile = File(...)):
 
     # Verify file structure
     if verify_zip(f"{file.filename}"):
+        # Upload to the cloud
         return {"detail": "uploaded"}
     else:
         os.remove(file.filename)
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
 
 
-@router.post("/schedule-task")
+@router.post("/schedule")
 async def schedule_task(background_tasks: BackgroundTasks):
     background_tasks.add_task(my_task)
     return {"message": "Task scheduled"}
