@@ -5,6 +5,9 @@ import json
 from fastapi import APIRouter
 from pymongo import MongoClient
 import uuid
+import logging
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
 
 fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
 Headers = {'X-M2M-Origin': 'admin:admin',
@@ -18,6 +21,34 @@ with open('config.ini') as f:
 
 
 app = FastAPI()
+
+
+# Configure the logger
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler("sensor_logger.log")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    try:
+        body = await request.body()
+        body = json.loads(body.decode("utf-8"))
+        print(body)
+    except:
+        body = None
+    response = await call_next(request)
+    if response.status_code >= 400:
+        error_message = response.json().get("error") or response.text
+        logger.error(f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
+    else:
+        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {body}")
+        
+    return await call_next(request)
+
 
 
 @app.get("/fetch")
