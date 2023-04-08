@@ -8,14 +8,20 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Up
 from utils.jwt_bearer import JWTBearer
 from utils.verify_zip import verify_zip
 
+
 sys.path.append("..")
 
 router = APIRouter()
 
 
-async def my_task(time: int):
+async def my_task(time: int, file: UploadFile = File(...)):
     await asyncio.sleep(time)
     # Logic or api call will come here to deploy
+    try:
+        ans = await upload_zip_file(file)
+        print(ans)
+    except:
+        print("invalid")
     print("Task Deployed")
 
 
@@ -42,7 +48,7 @@ async def upload_zip_file(file: UploadFile = File(...)):
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
 
 
-@router.post("/schedule")
-async def schedule_task(background_tasks: BackgroundTasks, time: int = 0):
-    background_tasks.add_task(my_task, time)
+@router.post("/schedule", dependencies=[Depends(JWTBearer())])
+async def schedule_task(background_tasks: BackgroundTasks, time: int = 0, file: UploadFile = File(...)):
+    background_tasks.add_task(my_task, time, file)
     return {"message": "Task scheduled"}
