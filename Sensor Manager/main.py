@@ -1,20 +1,26 @@
 # Om2m - http://192.168.137.185:5089/webpage
 
+from decouple import config
 import requests
 from fastapi import FastAPI
 import json
 from pymongo import MongoClient
 import time
 import threading
-fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
+
+# fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
 Headers = {'X-M2M-Origin': 'admin:admin',
            'Content-Type': 'application/json;ty=4'}
 
-mongoKey = ""
+# mongoKey = ""
 # get MongoDB key from config file
-with open('config.ini') as f:
-    config = json.load(f)
-    mongoKey = config['mongoKey']
+# with open('config.ini') as f:
+#     config = json.load(f)
+#     mongoKey = config['mongoKey']
+
+
+mongoKey = config('mongoKey')
+fetchAPI = config('Om2mFetchAPI')
 
 
 def processData(data):
