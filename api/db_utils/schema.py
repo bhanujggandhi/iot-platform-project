@@ -1,3 +1,43 @@
+
+# (DB:ActiveNodeDB , collection:activeNodeCollection)
+ActiveNodeSchema = {
+    '$jsonSchema': {
+        'bsonType': 'object',
+        'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
+        'properties': {
+            'VMid': {
+                'bsonType': 'string',
+                'description': 'must be a string and is required'
+            },
+            'IP': {
+                'bsonType': 'string',
+                'description': 'must be a string and is required'
+            },
+            'Port': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'CPU': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'Memory': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'OtherStats': {
+                'bsonType': 'array',
+                'description': 'must be an array and is required',
+                'items': {
+                    'bsonType': 'string',
+                    'description': 'must be a string if the field is present'
+                }
+            }
+        }
+    }
+
+}
+# (DB:userDB, collection:userCollection )
 userCollectionSchema = {
     '$jsonSchema': {
         'bsonType': 'object',
@@ -36,44 +76,7 @@ userCollectionSchema = {
 
 }
 
-
-ActiveNodeSchema = {
-    '$jsonSchema': {
-        'bsonType': 'object',
-        'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
-        'properties': {
-            'VMid': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
-            },
-            'IP': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
-            },
-            'Port': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'CPU': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'Memory': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'OtherStats': {
-                'bsonType': 'array',
-                'description': 'must be an array and is required',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string if the field is present'
-                }
-            }
-        }
-    }
-
-}
+# (DB:userDB , collection:ApiCollection)
 
 ApiSchema = {
     'validator': {
@@ -92,6 +95,8 @@ ApiSchema = {
         }
     }
 }
+
+# (DB:userDB , collection:AppCollection )
 
 AppSchema = {
     'validator': {
@@ -125,6 +130,7 @@ AppSchema = {
         }
     }
 }
+# (DB:userDB , collection:TrafficCollection )
 
 TrafficSchema = {
     'validator': {
