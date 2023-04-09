@@ -27,8 +27,10 @@ async def my_task(time: int, file: UploadFile = File(...)):
         print("hello")
         fname = file.filename
         fname = fname.split(".")[0]
-        res = await grequests.post(f"http://127.0.0.1:8001/deploy/{fname}").json()
-        print(res)
+        res = requests.post(f"http://127.0.0.1:8001/deploy/{fname}")
+        os.remove(file.filename)
+        print(status)
+        print(res.text)
     except:
         print("invalid")
     print("Task Deployed")
@@ -55,6 +57,7 @@ async def upload_zip_file(file: UploadFile = File(...)):
         fname = file.filename
         fname = fname.split(".")[0]
         res = requests.post(f"http://127.0.0.1:8001/deploy/{fname}")
+        os.remove(file.filename)
         print(status)
         print(res.text)
         # return res
@@ -65,6 +68,22 @@ async def upload_zip_file(file: UploadFile = File(...)):
 
 @router.post("/schedule", dependencies=[Depends(JWTBearer())])
 async def schedule_task(background_tasks: BackgroundTasks, time: int = 0, file: UploadFile = File(...)):
-    status = await upload_zip_file(file)
-    background_tasks.add_task(my_task, time, file)
-    return {"message": "Task scheduled", "status": json.dumps(status)}
+    # Check filetype
+    if file.content_type != "application/zip":
+        raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
+
+    # Copy file to local disk
+    with open(f"{file.filename}", "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    # Verify file structure
+    if verify_zip(f"{file.filename}"):
+        # Upload to the cloud
+        status = uploadFile(CONTAINER_NAME, ".", file.filename)
+        fname = file.filename
+        fname = fname.split(".")[0]
+        background_tasks.add_task(my_task, time, file)
+        return {"message": "Task scheduled", "status": json.dumps(status)}
+    else:
+        os.remove(file.filename)
+        raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")

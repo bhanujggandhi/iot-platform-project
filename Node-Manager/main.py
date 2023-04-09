@@ -2,11 +2,14 @@ import json
 import os
 import zipfile
 from typing import Union
+import json
+from Messenger import Produce
 
 from fastapi import FastAPI
 from storage import downloadFile
 
 app = FastAPI()
+produce = Produce()
 
 ports = [8001, 8002, 8003, 8004, 8005, 8006, 8007]
 ip = "127.0.0.1"
@@ -38,12 +41,12 @@ def initialize():
     # print(module_data["modules"])
     module = module_data["modules"]
     for service in module:
-        cmd = f"sudo docker stop {service} && docker rm {service}"
+        cmd = f"docker stop {service} && docker rm {service}"
         os.system(cmd)
-        cmd = f"sudo docker rmi {service}"
+        cmd = f"docker rmi {service}"
         os.system(cmd)
         generate_docker_image(service)
-        cmd = f"sudo docker build -t {service} {service}"
+        cmd = f"docker build -t {service} {service}"
         os.system(cmd)
         cmd = f"docker run --name {service} -d -p 8080:80 {service}"
         os.system(cmd)
@@ -62,13 +65,20 @@ def serve_deploy(appid: str):
     with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
 
-    cmd = f"sudo docker stop {appid} && docker remove{appid}"
+    cmd = f"docker stop {appid} && docker remove{appid}"
     os.system(cmd)
     generate_docker_image(appid)
-    cmd = f"sudo docker build -t {appid} {appid}"
+    cmd = f"docker build -t {appid} {appid}"
     os.system(cmd)
-    cmd = f"sudo docker run --name {appid} -d -p 8080:80 {appid}"
+    cmd = f"docker run --name {appid} -d -p 8081:80 {appid}"
     os.system(cmd)
+    message = {
+        "receiver_email": "mayankgupta12321@gmail.com",
+        "subject": f"{appid} Deployed",
+        "body": f"Hello Developer,\nWe have successfully deployed your app at http://localhost:8080",
+    }
+
+    produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
     deployed_apps.append(appid)
     # os.remove(appid)
 
