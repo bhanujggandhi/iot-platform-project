@@ -1,50 +1,89 @@
 import requests
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI,UploadFile
 from pydantic import BaseModel
-import json
-from pymongo import MongoClient
 
-with open('config.ini') as f:
-    config=json.load(f)
-    mongoKey=config['mongoKey']
-
-client=MongoClient(mongoKey)
-db=client.token
 
 class Item(BaseModel):
 
-    token: str 
-    app_id: str 
-    api_name: str
-    pm1: Union[str,None]= None
-    pm2: Union[str,None]= None
-    pm3: Union[str,None]= None
-    pm4: Union[str,None]= None
-    pm5: Union[str,None]= None
-    pm6: Union[str,None]= None
-    pm7: Union[str,None]= None
-    pm8: Union[str,None]= None
-    pm9: Union[str,None]= None
-    pm10: Union[str,None]= None
+    token: Union[str,None]=None 
+    app_id: Union[str,None]=None 
+    api_name: Union[str,None]=None
+    sensorID: Union[str,None]=None
+    fetchType: Union[str,None]=None
+    duration: Union[int,None]=None
+    startTime: Union[int,None]=None
+    endTime: Union[int,None]=None
+    sensorName: Union[str,None]=None
+    sensorType: Union[str,None]=None
+    sensorLocation: Union[str,None]=None
+    sensorDescription: Union[str,None]=None
+    file: Union[UploadFile,None]=None
+    Bearer : Union[str,None]=None
+    # header : {}
 
 app = FastAPI()
 
-url="http://127.0.0.1:8000/"
+url="http://192.168.47.246:8001"
 
 @app.post("/")
-def root(item:Item):
+async def root(item:Item):
 
-    if(item.api_name!="signup"):
+    # if(item.api_name!="signup"):
 
-        payload={"token":item.token, "api_name": item.api_name}
-        response=requests.post(url+"verify",json=payload).json()
-        print(response["message"])
-        if response["status"] == 200:
-            return {"call completed"}
-        else:
-            return {"call failed"}
+    #     payload={"token":item.token, "api_name": item.api_name}
+    #     response=requests.post(url+"verify",json=payload).json()
+    #     print(response["message"])
+    #     if response["status"] == 200:
+    #         return {"call completed"}
+    #     else:
+    #         return {"call failed"}
         
-        
+    if(item.api_name=="fetch"):
+
+        args={
+            "sensorID":item.sensorID,
+            "fetchType":item.fetchType,
+            "duration":item.duration,
+            "startTime":item.startTime,
+            "endTime":item.endTime
+            }
+        response=requests.get(url+"/"+item.api_name,params=args).json()
+        print(response)
+        return response
     
-        
+    if(item.api_name=="register"):
+
+        args={
+            "sensorName":item.sensorName,
+            "sensorType":item.sensorType,
+            "sensorLocation":item.sensorLocation,
+            "sensorDescription":item.sensorDescription}
+        response=requests.post(url+"/"+item.api_name,params=args).json()
+        return response
+    
+    if(item.api_name=="bind"):
+
+        args={
+            "sensorName":item.sensorName,
+            "sensorType":item.sensorType,
+            "sensorLocation":item.sensorLocation,
+            "sensorDescription":item.sensorDescription}
+        response=requests.get(url+"/"+item.api_name,params=args).json()
+        return response
+    
+    if(item.api_name=="deregister"):
+
+        args={
+            "sensorID":item.sensorID,
+            }
+        response=requests.delete(url+"/"+item.api_name,params=args).json()
+        return response
+    
+    if(item.api_name=="deploy"):
+
+        args={
+            "file":item.file
+            }
+        response=requests.post(url+"/"+item.api_name,params=args,headers=item.header).json()
+        return response
