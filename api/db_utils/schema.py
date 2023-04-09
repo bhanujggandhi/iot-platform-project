@@ -37,7 +37,7 @@ userCollectionSchema = {
 }
 
 
-ActiveNodeScema = {
+ActiveNodeSchema = {
     '$jsonSchema': {
         'bsonType': 'object',
         'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
@@ -73,4 +73,95 @@ ActiveNodeScema = {
         }
     }
 
+}
+
+ApiSchema = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': 'object',
+            'title': 'Student Object Validation',
+            'required': ['ApiKey', 'developerId'],
+            'properties': {
+                'ApiKey': {
+                    'bsonType': 'string'
+                },
+                'developerId': {
+                    'bsonType': 'string'
+                }
+            }
+        }
+    }
+}
+
+AppSchema = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': 'object',
+            'title': 'Student Object Validation',
+            'required': ['AppId', 'AppName', 'Services', 'Sensors', 'Users', 'Version'],
+            'properties': {
+                'AppId': {
+                    'bsonType': 'string'
+                },
+                'AppName': {
+                    'bsonType': 'string'
+                },
+                'Services': {
+                    'bsonType': 'array',
+                    'items': {'bsonType': 'string'}
+                },
+                'Sensors': {
+                    'bsonType': 'array',
+                    'items': {'bsonType': 'string'}
+                },
+                'Users': {
+                    'bsonType': 'array',
+                    'items': {'bsonType': 'string'}
+                },
+                'Version': {
+                    'bsonType': 'double'
+                }
+            }
+        }
+    }
+}
+
+TrafficSchema = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': 'object',
+            'title': 'Student Object Validation',
+            'required': ['ApiKey', 'Api'],
+            'properties': {
+                'ApiKey': {
+                    'bsonType': 'string'
+                },
+                'Api': {
+                    'bsonType': 'string'
+                },
+                'InputParams': {
+                    'bsonType': 'array',
+                    'items': {
+                        "oneOf": [
+                            {"bsonType": "string"},
+                            {"bsonType": "int"},
+                            {"bsonType": "date"},
+                            {"bsonType": "bool"},
+                            {"bsonType": "double"},
+                            {"bsonType": "objectId"}
+                        ]
+                    }
+                },
+                'Status': {
+                    'bsonType': 'int'
+                },
+                'StartTime': {
+                    'bsonType': 'timestamp'
+                },
+                'EndTime': {
+                    'bsonType': 'timestamp'
+                }
+            }
+        }
+    }
 }
