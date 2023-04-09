@@ -7,8 +7,6 @@ import json
 from pymongo import MongoClient
 import time
 import threading
-
-# fetchAPI = "http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/Device-1/Data?rcn=4"
 Headers = {'X-M2M-Origin': 'admin:admin',
            'Content-Type': 'application/json;ty=4'}
 
