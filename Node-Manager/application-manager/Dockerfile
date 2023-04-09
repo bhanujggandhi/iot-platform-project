@@ -1,11 +1,9 @@
-FROM python:3.8.16
+FROM python:3.8
 
-WORKDIR /code
+COPY . /app/
 
-COPY ./requirements.txt /code/requirements.txt
+WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install -r requirements.txt
 
-COPY ./application-manager.py ./
-
-CMD ["python3", "./application-manager.py"]
+CMD ["python3", "main.py"]
