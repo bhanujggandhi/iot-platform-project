@@ -40,10 +40,12 @@ def initialize():
     for service in module:
         cmd = f"sudo docker stop {service} && docker rm {service}"
         os.system(cmd)
+        cmd = f"sudo docker rmi {service}"
+        os.system(cmd)
         generate_docker_image(service)
         cmd = f"sudo docker build -t {service} {service}"
         os.system(cmd)
-        cmd = f"sudo docker run --name {service} {service}"
+        cmd = f"docker run --name {service} -d -p 8080:80 {service}"
         os.system(cmd)
         upservices.append(service)
 
