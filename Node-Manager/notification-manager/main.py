@@ -23,4 +23,7 @@ if __name__ == "__main__":
         if resp["status"] == False:
             print(resp["value"])
         else:
-            utilise_message(resp["key"], resp["value"])
+            try:
+                utilise_message(resp["key"], resp["value"])
+            except:
+                print("some value")
