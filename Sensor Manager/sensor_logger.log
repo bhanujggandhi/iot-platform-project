@@ -25,15 +25,3 @@
 2023-04-09 00:45:17,043 - my_logger - INFO - GET /docs - 200 - None
 2023-04-09 00:45:17,612 - my_logger - INFO - GET /openapi.json - 200 - None
 2023-04-09 00:46:20,118 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:54:41,057 - my_logger - INFO - GET /docs - 200 - None
-2023-04-09 14:54:41,541 - my_logger - INFO - GET /openapi.json - 200 - None
-2023-04-09 14:56:19,492 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:56:23,999 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:56:26,592 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:56:28,000 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:56:38,788 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:57:01,431 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:57:46,059 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 14:57:49,627 - my_logger - INFO - GET /fetch - 200 - None
-2023-04-09 15:11:47,989 - my_logger - INFO - GET /docs - 200 - None
-2023-04-09 15:11:48,156 - my_logger - INFO - GET /openapi.json - 200 - None

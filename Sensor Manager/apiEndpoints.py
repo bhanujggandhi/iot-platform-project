@@ -9,6 +9,7 @@ from decouple import config
 import logging
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
+import time
 
 
 Headers = {'X-M2M-Origin': 'admin:admin',
@@ -25,7 +26,8 @@ app = FastAPI()
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler("sensor_logger.log")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -37,20 +39,21 @@ async def log_requests(request: Request, call_next):
         body = json.loads(body.decode("utf-8"))
     except:
         body = None
-        
+
     response = await call_next(request)
     if response.status_code >= 400:
         error_message = response.json().get("error") or response.text
-        logger.error(f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
+        logger.error(
+            f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
     else:
-        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {body}")
-        
+        logger.info(
+            f"{request.method} {request.url.path} - {response.status_code} - {body}")
+
     return response
 
 
-
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "", startTime: int = None, endTime: int = None):
+async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, startTime: int = None, endTime: int = None):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
@@ -74,7 +77,20 @@ async def fetch(sensorID: str = "", fetchType: str = "", startTime: int = None, 
                     timeSeriesData.append(d)
 
         return timeSeriesData
+    elif fetchType == "RealTime":
+        realTimeData = []
+        while (duration):
+            data = collection.find({"sensorID": sensorID})
+            for cur in data:
+                cur = cur["data"][-1]
+                # timestamp = int(cur[1:-1].split(",")[0])
+                realTimeData.append(cur)
+                duration -= 1
+                time.sleep(1)
 
+        return realTimeData
+
+        # realTimeData.append(d)
     # res = requests.get(fetchAPI, headers=Headers)
     # if res.status_code == 200:
     #     return res.json()
