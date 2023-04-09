@@ -1,6 +1,6 @@
 
 import json
-from  Comm.Messenger import Produce
+from  Messenger import Produce
 
 TOPIC = 'topic_notification'
 

@@ -1,7 +1,8 @@
 
 import json
 from notification_utils import sendEmail
-from Comm.Messenger import Consume
+import sys
+from Messenger import Consume
 
 TOPIC = 'topic_notification'
 
