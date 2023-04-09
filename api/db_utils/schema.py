@@ -1,4 +1,4 @@
-serCollectionSchema = {
+userCollectionSchema = {
     '$jsonSchema': {
         'bsonType': 'object',
         'required': ['developerId', 'developerName', 'Role', 'email', 'password', 'Appids'],
