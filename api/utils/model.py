@@ -6,10 +6,10 @@ from pydantic import BaseModel, EmailStr, Field, validator
 
 
 class UserSchema(BaseModel):
-    firstname: str = Field(...)
-    lastname: str = Field(...)
+    name: str = Field(...)
     email: EmailStr = Field(...)
     password: str = Field(...)
+    role: str = Field(...)
 
     class Config:
         schema_extra = {"example": {"firstname": "John", "lastname": "Doe", "email": "joe@xyz.com", "password": "any"}}
