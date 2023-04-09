@@ -3,8 +3,8 @@ import ssl
 from email.message import EmailMessage
 from decouple import config
 
-SENDER_EMAIL = config("NOTIFICATION_SENDER_EMAIL")
-SENDER_PASSWORD = config("NOTIFICATION_SENDER_PASSWORD")
+SENDER_EMAIL = "ias2023.g1@gmail.com"
+SENDER_PASSWORD = "lhjzqidvggrpmnkq"
 
 
 def sendEmail(receiver_email, subject, body):
