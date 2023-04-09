@@ -4,14 +4,17 @@ import shutil
 import sys
 
 import uvicorn
+from decouple import config
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from utils.jwt_bearer import JWTBearer
+from utils.storage import uploadFile
 from utils.verify_zip import verify_zip
-
 
 sys.path.append("..")
 
 router = APIRouter()
+
+CONTAINER_NAME = config("deploy_app_container_name")
 
 
 async def my_task(time: int, file: UploadFile = File(...)):
@@ -42,7 +45,8 @@ async def upload_zip_file(file: UploadFile = File(...)):
     # Verify file structure
     if verify_zip(f"{file.filename}"):
         # Upload to the cloud
-        return {"detail": "uploaded"}
+        status = await uploadFile(CONTAINER_NAME, file.filename, file.filename)
+        return status
     else:
         os.remove(file.filename)
         raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")

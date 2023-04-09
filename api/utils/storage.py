@@ -1,26 +1,22 @@
 import os
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob.aio import BlobServiceClient
 from decouple import config
 
 AZURE_STORAGE_CONNECTION_STRING = config("AZURE_STORAGE_CONNECTION_STRING")
 
 
 # Getting Container Name
-def getContainer(containerName):
+async def getContainer(containerName):
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(
-            AZURE_STORAGE_CONNECTION_STRING
-        )
+        blob_service_client = await BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
     except:
         return {"status": False, "message": "Network Error"}
 
     try:
-        container_client = blob_service_client.create_container(containerName)
+        container_client = await blob_service_client.create_container(containerName)
     except:
         try:
-            container_client = blob_service_client.get_container_client(
-                container=containerName
-            )
+            container_client = await blob_service_client.get_container_client(container=containerName)
         except:
             return {"status": False, "message": "Network Error"}
     return {
@@ -31,24 +27,22 @@ def getContainer(containerName):
 
 
 # Upload File to Azure Storage
-def uploadFile(containerName, sourcePath, localFileName):
-    resp = getContainer(containerName)
-    if resp['status'] == False:
+async def uploadFile(containerName: str, sourcePath: str, filename: str):
+    resp = await getContainer(containerName)
+    if resp["status"] == False:
         return resp
 
     blob_service_client = resp["blob_service_client"]
     container_client = resp["container_client"]
 
     try:
-        upload_file_path = os.path.join(sourcePath, localFileName)
-        blob_client = blob_service_client.get_blob_client(
-            container=containerName, blob=localFileName
-        )
+        upload_file_path = os.path.join(sourcePath, filename)
+        blob_client = await blob_service_client.get_blob_client(container=containerName, blob=localFileName)
         with open(file=upload_file_path, mode="rb") as data:
-            blob_client.upload_blob(data)
+            await blob_client.upload_blob(data)
         return {
             "status": True,
-            "message": f"File {localFileName} uploaded successfully",
+            "message": f"File {filename} uploaded successfully",
         }
     except:
         return {"status": False, "message": "Network Error"}
@@ -57,7 +51,7 @@ def uploadFile(containerName, sourcePath, localFileName):
 # Download File from Azure Storage
 def downloadFile(containerName, serverFileName, destinationPath):
     resp = getContainer(containerName)
-    if resp['status'] == False:
+    if resp["status"] == False:
         return resp
 
     blob_service_client = resp["blob_service_client"]
@@ -65,9 +59,7 @@ def downloadFile(containerName, serverFileName, destinationPath):
 
     try:
         download_file_path = os.path.join(destinationPath, serverFileName)
-        blob_client = blob_service_client.get_blob_client(
-            container=containerName, blob=serverFileName
-        )
+        blob_client = blob_service_client.get_blob_client(container=containerName, blob=serverFileName)
         with open(file=download_file_path, mode="wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
         return {
@@ -81,16 +73,14 @@ def downloadFile(containerName, serverFileName, destinationPath):
 # Delete File from Azure Storage
 def deleteFile(containerName, fileName):
     resp = getContainer(containerName)
-    if resp['status'] == False:
+    if resp["status"] == False:
         return resp
 
     blob_service_client = resp["blob_service_client"]
     container_client = resp["container_client"]
 
     try:
-        blob_client = blob_service_client.get_blob_client(
-            container=containerName, blob=fileName
-        )
+        blob_client = blob_service_client.get_blob_client(container=containerName, blob=fileName)
         blob_client.delete_blob()
         return {"status": True, "message": f"File {fileName} deleted successfully"}
     except:
@@ -100,7 +90,7 @@ def deleteFile(containerName, fileName):
 # List Files in storage
 def listFiles(containerName):
     resp = getContainer(containerName)
-    if resp['status'] == False:
+    if resp["status"] == False:
         return resp
 
     blob_service_client = resp["blob_service_client"]
@@ -116,54 +106,53 @@ def listFiles(containerName):
 
 # Sample Driver Code
 if __name__ == "__main__":
-    containerName = 'apps'
-    downloadFilePath = './download_data'
-    uploadFilePath = './upload_data'
-    fileNames = ['app1.zip', 'app2.zip', 'app3.zip']
+    containerName = "apps"
+    downloadFilePath = "./download_data"
+    uploadFilePath = "./upload_data"
+    fileNames = ["app1.zip", "app2.zip", "app3.zip"]
 
     # upload and list file
-    for fileName in fileNames :
+    for fileName in fileNames:
         resp = uploadFile(containerName, uploadFilePath, fileName)
-        if(resp['status'] == False) :
-            print(resp['message'])
-        else :
-            print(resp['message'])
+        if resp["status"] == False:
+            print(resp["message"])
+        else:
+            print(resp["message"])
 
-        print('---------------LIST FILES------------------------')
-
-        resp = listFiles(containerName)
-        if(resp['status'] == False) :
-            print(resp['message'])
-        else :
-            print(resp['fileList'])
-        
-        print('-------------------------------------------')
-
-    # download files
-    for fileName in fileNames :
-        resp = downloadFile(containerName, fileName, downloadFilePath)
-        if(resp['status'] == False) :
-            print(resp['message'])
-        else :
-            print(resp['message'])
-        
-        print('-------------------------------------------')
-
-    # delete and list file
-    for fileName in fileNames :
-        resp = deleteFile(containerName, fileName)
-        if(resp['status'] == False) :
-            print(resp['message'])
-        else :
-            print(resp['message'])
-
-        print('---------------LIST FILES------------------------')
+        print("---------------LIST FILES------------------------")
 
         resp = listFiles(containerName)
-        if(resp['status'] == False) :
-            print(resp['message'])
-        else :
-            print(resp['fileList'])
-        
-        print('-------------------------------------------')
+        if resp["status"] == False:
+            print(resp["message"])
+        else:
+            print(resp["fileList"])
 
+        print("-------------------------------------------")
+
+    # # download files
+    # for fileName in fileNames:
+    #     resp = downloadFile(containerName, fileName, downloadFilePath)
+    #     if resp["status"] == False:
+    #         print(resp["message"])
+    #     else:
+    #         print(resp["message"])
+
+    #     print("-------------------------------------------")
+
+    # # delete and list file
+    # for fileName in fileNames:
+    #     resp = deleteFile(containerName, fileName)
+    #     if resp["status"] == False:
+    #         print(resp["message"])
+    #     else:
+    #         print(resp["message"])
+
+    #     print("---------------LIST FILES------------------------")
+
+    #     resp = listFiles(containerName)
+    #     if resp["status"] == False:
+    #         print(resp["message"])
+    #     else:
+    #         print(resp["fileList"])
+
+    #     print("-------------------------------------------")

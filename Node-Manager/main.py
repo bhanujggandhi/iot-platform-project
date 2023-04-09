@@ -11,23 +11,15 @@ ports = [8001, 8002, 8003, 8004, 8005, 8006, 8007]
 
 
 def generate_docker_image(service):
-    s = (
-        """FROM python:3.8.16
+    s = """FROM python:3.8
 
-WORKDIR /code
+COPY . /app/
 
-COPY ./requirements.txt /code/requirements.txt
+WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install -r requirements.txt
 
-COPY ./"""
-        + str(service)
-        + """.py ./
-
-CMD ["python3", "./"""
-        + str(service)
-        + """.py"]"""
-    )
+CMD ["python3", "main.py"]"""
     # CMD ["uvicorn", " """ +str(service)+""".main:app", "--host", "0.0.0.0", "--port", ' """ +str(ports[3])+ """' ]"""
 
     f = open("./" + str(service) + "/Dockerfile", "w")
@@ -42,12 +34,31 @@ def initialize():
     upservices = []
     module = module_data["modules"]
     for service in module:
-        cmd = f"sudo docker stop $(sudo docker ps -aqf 'name={service}') && sudo docker remove $(sudo docker ps -aqf 'name={service}')"
+        cmd = f"docker stop {service} && docker rm {service}"
         os.system(cmd)
         generate_docker_image(service)
-        cmd = "sudo docker build -t " + str(service) + " ./" + str(service)
+        cmd = f"docker build -t {service} ./{service}"
         os.system(cmd)
-        cmd = f"sudo docker run --name {service} {service}"
+        cmd = f"docker run --name {service} {service}"
+        os.system(cmd)
+        upservices.append(service)
+
+    return {"services": upservices}
+
+
+@app.get("/deploy")
+def initialize():
+    with open("module.json", "r") as f:
+        module_data = json.load(f)
+    upservices = []
+    module = module_data["modules"]
+    for service in module:
+        cmd = f"docker stop {service} && docker rm {service}"
+        os.system(cmd)
+        generate_docker_image(service)
+        cmd = f"docker build -t {service} ./{service}"
+        os.system(cmd)
+        cmd = f"docker run --name {service} {service}"
         os.system(cmd)
         upservices.append(service)
 
