@@ -2,7 +2,7 @@
 
 ### Schema
 
-1. from decouple import config
+1. from decoupler import config
 2. from pymongo import MongoClient
 3. mongokey = config('mongoKey')
 4. client = MongoClient(mongokey)

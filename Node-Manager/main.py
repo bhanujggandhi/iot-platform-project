@@ -48,7 +48,7 @@ def initialize():
         generate_docker_image(service)
         cmd = f"docker build -t {service} {service}"
         os.system(cmd)
-        cmd = f"docker run --name {service} -d -p 8080:80 {service}"
+        cmd = f"sudo docker run --name {service} -d -p 8080:80 {service}"
         os.system(cmd)
         upservices.append(service)
 
