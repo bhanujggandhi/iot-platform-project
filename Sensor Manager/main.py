@@ -62,7 +62,7 @@ def SensorData(freq=10, datathreshold=1000):
             db = client.SensorDB
             collection = db.SensorData
             sensors = sensorData.keys()
-            print(sensors)
+            # print(sensors)
             sensorIds = getSensorID(sensors)
 
             # check if count of documents with a particular sensor type is if 50, delete the the oldest 10 documents where the first entry in data is timestamp
