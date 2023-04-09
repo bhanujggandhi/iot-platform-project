@@ -1,13 +1,17 @@
-from typing import Union
-from fastapi import FastAPI
-
-import os
 import json
+import os
+import zipfile
+from typing import Union
 
+from fastapi import FastAPI
 
 app = FastAPI()
 
 ports = [8001, 8002, 8003, 8004, 8005, 8006, 8007]
+ip = "127.0.0.1"
+taken = [False] * 7
+upservices = []
+deployed_apps = ["myapp1"]
 
 
 def generate_docker_image(service):
@@ -31,13 +35,12 @@ def initialize():
     with open("module.json", "r") as f:
         module_data = json.load(f)
     # print(module_data["modules"])
-    upservices = []
     module = module_data["modules"]
     for service in module:
         cmd = f"docker stop {service} && docker rm {service}"
         os.system(cmd)
         generate_docker_image(service)
-        cmd = f"docker build -t {service} ./{service}"
+        cmd = f"docker build -t {service} {service}"
         os.system(cmd)
         cmd = f"docker run --name {service} {service}"
         os.system(cmd)
@@ -46,23 +49,52 @@ def initialize():
     return {"services": upservices}
 
 
-@app.get("/deploy")
-def initialize():
-    with open("module.json", "r") as f:
-        module_data = json.load(f)
-    upservices = []
-    module = module_data["modules"]
-    for service in module:
-        cmd = f"docker stop {service} && docker rm {service}"
-        os.system(cmd)
-        generate_docker_image(service)
-        cmd = f"docker build -t {service} ./{service}"
-        os.system(cmd)
-        cmd = f"docker run --name {service} {service}"
-        os.system(cmd)
-        upservices.append(service)
+@app.post("/deploy/{appid}")
+def serve_deploy(appid: str):
+    if appid in deployed_apps:
+        return {"err": "app already deployed"}
 
-    return {"services": upservices}
+    with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
+        zip_ref.extractall(".")
+
+    cmd = f"docker stop {appid} && docker remove{appid}"
+    os.system(cmd)
+    generate_docker_image(appid)
+    cmd = f"docker build -t {appid} {appid}"
+    os.system(cmd)
+    cmd = f"docker run --name {appid} -d -p 8080:80 {appid}"
+    os.system(cmd)
+    deployed_apps.append(appid)
+
+
+@app.post("/app/stop/{appid}")
+def serve_deploy(appid: str):
+    if not appid in deployed_apps:
+        return {"err": "app not deployed"}
+
+    cmd = f"docker stop {appid}"
+    os.system(cmd)
+
+
+@app.post("/app/start/{appid}")
+def serve_deploy(appid: str):
+    if not appid in deployed_apps:
+        return {"err": "app not deployed"}
+
+    cmd = f"docker start {appid}"
+    os.system(cmd)
+
+
+@app.post("/app/remove/{appid}")
+def serve_deploy(appid: str):
+    if not appid in deployed_apps:
+        return {"err": "app not deployed"}
+
+    cmd = f"docker stop {appid} && docker rm {appid}"
+    os.system(cmd)
+    cmd = f"docker rmi {appid}"
+    os.system(cmd)
+    deployed_apps.remove(appid)
 
 
 @app.post("/create_node/{service}")
@@ -73,7 +105,13 @@ def create_node(service: str):
     os.system(cmd)
     cmd = f"sudo docker run --name {service} {service}"
     os.system(cmd)
-    return {"service": service}
+    port = 0
+    for i in range(len(ports)):
+        if not taken[i]:
+            port = ports[i]
+            taken[i] = True
+            break
+    return {"service_status": "NODE CREATED!!", "IP": ip, "PORT": port}
 
 
 @app.get("/start_node/{service}")

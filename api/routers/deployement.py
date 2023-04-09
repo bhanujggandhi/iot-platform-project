@@ -1,5 +1,5 @@
 import asyncio
-import os
+import json
 import shutil
 import sys
 
@@ -10,7 +10,7 @@ from utils.jwt_bearer import JWTBearer
 from utils.storage import uploadFile
 from utils.verify_zip import verify_zip
 
-sys.path.append("..")
+sys.path.append("../")
 
 router = APIRouter()
 
@@ -54,5 +54,6 @@ async def upload_zip_file(file: UploadFile = File(...)):
 
 @router.post("/schedule", dependencies=[Depends(JWTBearer())])
 async def schedule_task(background_tasks: BackgroundTasks, time: int = 0, file: UploadFile = File(...)):
+    status = await upload_zip_file(file)
     background_tasks.add_task(my_task, time, file)
-    return {"message": "Task scheduled"}
+    return {"message": "Task scheduled", "status": json.dumps(status)}

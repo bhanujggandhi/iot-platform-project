@@ -1,6 +1,7 @@
 import asyncio
 import os
 import shutil
+import sys
 from typing import List, Union
 
 import uvicorn
@@ -8,6 +9,8 @@ from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import deployement, tasks, user
 from utils.jwt_handler import decodeJWT, signJWT
+
+sys.path.append("..")
 
 app = FastAPI(
     title="Internal APIs",
