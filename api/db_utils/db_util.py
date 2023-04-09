@@ -1,6 +1,8 @@
 import pymongo
 from bson.json_util import dumps
 
+from decouple import config
+
 
 class DataBase:
     def __init__(self):
@@ -10,8 +12,8 @@ class DataBase:
         self.collection = None
 
     def connect(self):
-        self.client = pymongo.MongoClient(
-            "mongodb+srv://admin:admin@cluster0.ybcfbgy.mongodb.net/?retryWrites=true&w=majority")
+        mongoKey = config('mongoKey')
+        self.client = pymongo.MongoClient(mongoKey)
 
     def create_db(self, db_name: str):
         self.db = self.client[db_name]
