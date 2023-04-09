@@ -11,7 +11,7 @@ ports = [8001, 8002, 8003, 8004, 8005, 8006, 8007]
 ip = "127.0.0.1"
 taken = [False] * 7
 upservices = []
-deployed_apps = ["myapp1"]
+deployed_apps = []
 
 
 def generate_docker_image(service):
@@ -65,6 +65,9 @@ def serve_deploy(appid: str):
     cmd = f"docker run --name {appid} -d -p 8080:80 {appid}"
     os.system(cmd)
     deployed_apps.append(appid)
+    # os.remove(appid)
+
+    return {"success": "deployed", "port": "8080", "ip": "0.0.0.0"}
 
 
 @app.post("/app/stop/{appid}")

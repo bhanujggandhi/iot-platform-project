@@ -107,9 +107,9 @@ def listFiles(containerName):
 # Sample Driver Code
 if __name__ == "__main__":
     containerName = "apps"
-    downloadFilePath = "./download_data"
-    uploadFilePath = "./upload_data"
-    fileNames = ["app1.zip", "app2.zip", "app3.zip"]
+    downloadFilePath = "."
+    uploadFilePath = "."
+    fileNames = ["model.py"]
 
     # upload and list file
     for fileName in fileNames:
