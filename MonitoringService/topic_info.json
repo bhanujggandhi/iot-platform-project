@@ -1,0 +1,11 @@
+{
+  "Sensor Manager": {
+    "topic_name": "topic_sensor_manager"
+  },
+  "Node Manager": {
+    "topic_name": "topic_node_manager"
+  },
+  "Monitoring Service": {
+    "topic_name": "topic_monitoring"
+  }
+}

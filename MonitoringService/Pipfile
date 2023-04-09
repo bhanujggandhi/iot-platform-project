@@ -9,6 +9,7 @@ fastapi = "*"
 requests = "*"
 uvicorn = "*"
 pydantic = "*"
+confluent-kafka = "*"
 
 [dev-packages]
 
