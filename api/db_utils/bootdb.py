@@ -1,7 +1,10 @@
 import pymongo
+# from decouple import config
 
 # Set up a MongoDB client
-client = pymongo.MongoClient()
+# mongoKey = config('mongoKey')
+client = pymongo.MongoClient(
+    "mongodb+srv://admin:admin@cluster0.ybcfbgy.mongodb.net/?retryWrites=true&w=majority")
 
 # Define a list of databases and collections to create
 dbs_and_collections = [
@@ -13,58 +16,68 @@ dbs_and_collections = [
                 'schema': {
                     'developerId': {'bsonType': 'string'},
                     'developerName': {'bsonType': 'string'},
-                    'Role': {'bsonType': 'string'},
+                    'Role': {'enum': ['AppAdmin', 'AppDeveloper', 'PlatformAdmin']},
                     'email': {'bsonType': 'string', 'pattern': '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'},
-                    'password': {}
+                    'password': {'bsonType': 'string'},
+                    'ApiIds': {'bsonType': 'array', 'items': {'bsonType': 'string'}}
                 }
             },
             {
                 'name': 'AppCollection',
                 'schema': {
-                    'name': {'bsonType': 'string'},
-                    'age': {'bsonType': 'int'},
-                    'gender': {'enum': ['male', 'female', 'other']}
+                    'AppId': {'bsonType': 'string'},
+                    'AppName': {'bsonType': 'string'},
+                    'Services': {'bsonType': 'array', 'items': {'bsonType': 'string'}},
+                    'Sensors': {'bsonType': 'array', 'items': {'bsonType': 'string'}},   ##SENSOR TYPE CAN BE ENUM
+                    'Users': {'bsonType': 'array', 'items': {'bsonType': 'string'}},
+                    'Version': {'bsonType': 'double'}
                 }
             },
             {
                 'name': 'ApiCollection',
                 'schema': {
-                    'name': {'bsonType': 'string'},
-                    'age': {'bsonType': 'int'},
-                    'gender': {'enum': ['male', 'female', 'other']}
+                    'ApiKey': {'bsonType': 'string'},
+                    'developerId': {'bsonType': 'string'}
                 }
             },
             {
                 'name': 'TrafficCollection',
                 'schema': {
-                    'name': {'bsonType': 'string'},
-                    'age': {'bsonType': 'int'},
-                    'gender': {'enum': ['male', 'female', 'other']}
-                }
-            }
-        ]
-    },
-    {
-        'db_name': 'mydatabase2',
-        'collections': [
-            {
-                'name': 'my_collection3',
-                'schema': {
-                    'title': {'bsonType': 'string'},
-                    'description': {'bsonType': 'string'},
-                    'category': {'bsonType': 'string'}
-                }
-            },
-            {
-                'name': 'my_collection4',
-                'schema': {
-                    'name': {'bsonType': 'string'},
-                    'age': {'bsonType': 'int'},
-                    'email': {'bsonType': 'string', 'pattern': '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'}
+                    'ApiKey': {'bsonType': 'string'},
+                    'Api': {'bsonType': 'string'},
+                    'inputParmas': {'bsonType': 'array', 'items': {
+                        'bsonType': 'oneOf',
+                        'oneOf': [
+                            {'bsonType': 'string'},
+                            {'bsonType': 'int'},
+                            {'bsonType': 'double'}
+                        ]
+                    }},
                 }
             }
         ]
     }
+    # {
+    #     'db_name': 'mydatabase2',
+    #     'collections': [
+    #         {
+    #             'name': 'my_collection3',
+    #             'schema': {
+    #                 'title': {'bsonType': 'string'},
+    #                 'description': {'bsonType': 'string'},
+    #                 'category': {'bsonType': 'string'}
+    #             }
+    #         },
+    #         {
+    #             'name': 'my_collection4',
+    #             'schema': {
+    #                 'name': {'bsonType': 'string'},
+    #                 'age': {'bsonType': 'int'},
+    #                 'email': {'bsonType': 'string', 'pattern': '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'}
+    #             }
+    #         }
+    #     ]
+    # }
 ]
 
 # Loop through the list of databases and collections
