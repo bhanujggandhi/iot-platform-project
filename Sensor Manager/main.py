@@ -67,10 +67,10 @@ def SensorData(freq=10, datathreshold=1000):
 
             # check if count of documents with a particular sensor type is if 50, delete the the oldest 10 documents where the first entry in data is timestamp
 
-            for i in sensors:
-                if collection.count_documents({"sensorType": i}) >= 50:
-                    collection.delete_many(
-                        {"sensorType": i}, limit=50)
+            # for i in sensors:
+            #     if collection.count_documents({"sensorType": i}) >= 50:
+            #         collection.delete_many(
+            #             {"sensorType": i}, limit=50)
 
             for i in sensors:
                 if collection.count_documents({"sensorType": i}) == 0:
