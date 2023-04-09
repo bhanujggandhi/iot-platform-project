@@ -66,6 +66,8 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
     # find all data in DB
     if fetchType == "TimeSeries":
         data = collection.find({"sensorID": sensorID})
+        if data == None:
+            return {"data": []}
         timeSeriesData = []
         for cur in data:
             cur = cur["data"]
@@ -76,11 +78,13 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                 if (startTime <= timestamp) and (timestamp <= endTime):
                     timeSeriesData.append(d)
 
-        return timeSeriesData
+        return {"data": timeSeriesData}
     elif fetchType == "RealTime":
         realTimeData = []
         while (duration):
             data = collection.find({"sensorID": sensorID})
+            if data == None:
+                return {"data": []}
             for cur in data:
                 cur = cur["data"][-1]
                 # timestamp = int(cur[1:-1].split(",")[0])
@@ -88,7 +92,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                 duration -= 1
                 time.sleep(1)
 
-        return realTimeData
+        return {"data": realTimeData}
 
         # realTimeData.append(d)
     # res = requests.get(fetchAPI, headers=Headers)
@@ -98,7 +102,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
     #     return {"error": res.status_code}
 
 
-@app.post("/register")
+@ app.post("/register")
 async def register(sensorName: str = "", sensorType: str = "", sensorLocation: str = "", sensorDescription: str = ""):
     """
     This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
@@ -116,7 +120,7 @@ async def register(sensorName: str = "", sensorType: str = "", sensorLocation: s
 # if more than one sensor metadata is provided, the api will return the sensor ID of any one of the sensors that matches the metadata
 
 
-@app.get("/bind")
+@ app.get("/bind")
 async def bind(devId: str = None, sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
     """
     This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
@@ -141,7 +145,7 @@ async def bind(devId: str = None, sensorName: str = None, sensorType: str = None
     return {"sensorID": sensor["sensorID"]}
 
 
-@app.delete("/deregister")
+@ app.delete("/deregister")
 async def deregister(sensorID: str = ""):
     """
     This function will be responsible for deregistering the sensor with the SensorDB and sending the status code to the ReqstManager.

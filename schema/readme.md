@@ -1,7 +1,6 @@
 ## Template for MongoDB Schema Documentation
 
 ### Schema
-
 1. from decoupler import config
 2. from pymongo import MongoClient
 3. mongokey = config['mongoKey']

@@ -62,6 +62,7 @@ def SensorData(freq=10, datathreshold=50):
             db = client.SensorDB
             collection = db.SensorData
             sensors = sensorData.keys()
+            print(sensors)
             sensorIds = getSensorID(sensors)
 
             # check if count of documents with a particular sensor type is if 50, delete the the oldest 10 documents where the first entry in data is timestamp
@@ -94,49 +95,6 @@ def SensorData(freq=10, datathreshold=50):
         else:
             print("Error: ", res.status_code)
         time.sleep(freq)
-
-
-def SensorManager():
-    """
-    This function will be responsible for processing API requests received from the RqstManager and
-    sending the appropriate response back to the RqstManager.
-
-    For Processing API requests, the SensorManager will after Verification of the request, send the request to the
-    SensorStream and sensor Stream will process the request and send the response back to the ReqstManager.
-    """
-    pass
-
-
-def ReqstManager():
-    """
-    This function will be endpoint for all the API requests received from the client , it will redirect the request to the
-    SensorManager for processing and will send the response back to the client.
-    """
-    # create a server listening for requests
-
-
-def SensorStream():
-    """
-    This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
-    2 Modes of Fetching data from Om2m:
-    1.TimeSeries Data
-    2.RealTime Stream
-    """
-    pass
-
-
-def Validator():
-    """
-    This function will be responsible for validating the Sensor metadata  from SensorDB and respond the correctness of Sensor metadata.
-    """
-    pass
-
-
-def LogManager():
-    """
-    This function will be responsible for logging all the requests received from the client and the responses staus Codes sent back to the client.
-    """
-    pass
 
 
 if __name__ == "__main__":
