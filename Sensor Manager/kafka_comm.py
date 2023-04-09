@@ -26,7 +26,7 @@ def utilise_message(target, value):
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorData
-    response = []
+    sensor_data = []
 
     if fetchType == "TimeSeries":
         data = collection.find({"sensorID": sensorID})
@@ -40,7 +40,7 @@ def utilise_message(target, value):
                 if (startTime <= timestamp) and (timestamp <= endTime):
                     timeSeriesData.append(d)
 
-        response = timeSeriesData
+        sensor_data = timeSeriesData
     elif fetchType == "RealTime":
         realTimeData = []
         while (duration):
@@ -52,8 +52,9 @@ def utilise_message(target, value):
                 duration -= 1
                 time.sleep(1)
 
-        response = realTimeData
+        sensor_data = realTimeData
 
+    response = {"data" : sensor_data}
     produce = Produce()
     key = 'topic_sensor_manager'
     produce.push(target, key, json.dumps(response))
@@ -61,8 +62,8 @@ def utilise_message(target, value):
 
 TOPIC = 'topic_sensor_manager'
 consume = Consume(TOPIC)
-print('Consuming requests...')
 while True :
+    print('Consuming requests...')
     resp = consume.pull()
     if resp['status'] == False :
         print(resp['value'])

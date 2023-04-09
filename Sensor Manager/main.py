@@ -48,7 +48,7 @@ def getSensorID(sensorLabels):
     return sensorIDs
 
 
-def SensorData(freq=10, datathreshold=50):
+def SensorData(freq=10, datathreshold=1000):
     # This function will be responsible for fetching the data from Om2m and sending the data to MongoDB for storage.
     # when 50 instances of a particular sensor type are stored in the database, the oldest instance will be deleted
     # to make space for the new instance
