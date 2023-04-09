@@ -1,0 +1,48 @@
+{
+    "custom_workflow":
+    {
+			"workflow_name":"wf_name",
+			"params_count":2,
+            "workflow_fn_parameters":
+			{
+				"param_name":["par_1", "par_2"],
+				"param_dtype":["int","str"]
+			},
+
+			"service_list":[
+			{
+				"service_name":"foo",
+				"param_count":2,
+				"params_list":[
+					{
+						"param_name":"par_1",
+						"prev_service_output":"False",
+						"param_dtype":"str"
+					},
+					{
+						"param_name":"par_2",
+						"prev_service_output":"False",
+						"param_dtype":"int"
+					}
+				]
+			},
+				
+			{
+				"service_name":"bar",
+				"param_count":2,
+				"params_list":[
+					{
+						"param_name":"foo.key1",
+						"prev_service_output":"True",
+						"param_dtype":"type(foo.key1)"
+					},
+					{
+						"param_name":"par_1",
+						"prev_service_output":"False",
+						"param_dtype":"int"
+					}
+				]
+			}
+		]
+    }
+}
