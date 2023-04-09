@@ -1,9 +1,9 @@
 from decouple import config
 from pymongo import MongoClient
-mongokey = config['mongoKey']
+mongokey = config('mongoKey')
 client = MongoClient(mongokey)
 
-db = client('userDB')
+db = client['userDB']
 collection = db.AppCollection
 
 for document in collection.find():
