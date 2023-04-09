@@ -32,24 +32,24 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    try:
-        body = await request.body()
-        body = json.loads(body.decode("utf-8"))
-    except:
-        body = None
+# @app.middleware("http")
+# async def log_requests(request: Request, call_next):
+#     try:
+#         body = await request.body()
+#         body = json.loads(body.decode("utf-8"))
+#     except:
+#         body = None
 
-    response = await call_next(request)
-    if response.status_code >= 400:
-        error_message = response.json().get("error") or response.text
-        logger.error(
-            f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
-    else:
-        logger.info(
-            f"{request.method} {request.url.path} - {response.status_code} - {body}")
+#     response = await call_next(request)
+#     if response.status_code >= 400:
+#         error_message = response.json().get("error") or response.text
+#         logger.error(
+#             f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
+#     else:
+#         logger.info(
+#             f"{request.method} {request.url.path} - {response.status_code} - {body}")
 
-    return response
+#     return response
 
 
 @app.get("/fetch")
@@ -66,6 +66,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
     # find all data in DB
     if fetchType == "TimeSeries":
         data = collection.find({"sensorID": sensorID})
+        print(data)
         if data == None:
             return {"data": []}
         timeSeriesData = []
@@ -83,6 +84,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
         realTimeData = []
         while (duration):
             data = collection.find({"sensorID": sensorID})
+            print(data)
             if data == None:
                 return {"data": []}
             for cur in data:
@@ -93,6 +95,8 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                 time.sleep(1)
 
         return {"data": realTimeData}
+    else:
+        return {"Error": 400, "Message": "Parms not found"}
 
         # realTimeData.append(d)
     # res = requests.get(fetchAPI, headers=Headers)
@@ -111,6 +115,9 @@ async def register(sensorName: str = "", sensorType: str = "", sensorLocation: s
     db = client.SensorDB
     collection = db.SensorMetadata
     sensorID = str(uuid.uuid4())
+    if sensorID == "" or sensorType == "" or sensorLocation == "" or sensorDescription == "":
+        return {"Error": 400, "Message": "Parms not found"}
+
     sensor = {"sensorID": sensorID, "sensorName": sensorName, "sensorType": sensorType, "sensorLocation": sensorLocation,
               "sensorDescription": sensorDescription}
     collection.insert_one(sensor)
@@ -121,7 +128,7 @@ async def register(sensorName: str = "", sensorType: str = "", sensorLocation: s
 
 
 @ app.get("/bind")
-async def bind(devId: str = None, sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
+async def bind(sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
     """
     This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
     """
