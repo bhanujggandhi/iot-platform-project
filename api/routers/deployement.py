@@ -51,7 +51,7 @@ async def upload_zip_file(file: UploadFile = File(...)):
     # Verify file structure
     if verify_zip(f"{file.filename}"):
         # Upload to the cloud
-        status = await uploadFile(CONTAINER_NAME, file.filename, file.filename)
+        status = uploadFile(CONTAINER_NAME, ".", file.filename)
         fname = file.filename
         fname = fname.split(".")[0]
         res = requests.post(f"http://127.0.0.1:8001/deploy/{fname}")

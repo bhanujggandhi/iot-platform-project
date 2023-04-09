@@ -4,6 +4,7 @@ import zipfile
 from typing import Union
 
 from fastapi import FastAPI
+from storage import downloadFile
 
 app = FastAPI()
 
@@ -53,6 +54,8 @@ def initialize():
 def serve_deploy(appid: str):
     if appid in deployed_apps:
         return {"err": "app already deployed"}
+
+    status = downloadFile("apps", f"{appid}.zip", ".")
 
     with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
