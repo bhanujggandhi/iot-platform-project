@@ -1,10 +1,5 @@
 import json
 
-def get_service_entry():
-    new_service_entry = ""
-    print("Hello")
-    return new_service_entry
-
 contract_file = "contract.json"
 f = open(contract_file)
 work_details = json.load(f)["custom_workflow"]
@@ -48,9 +43,10 @@ for service_no, service in enumerate(work_details["service_list"]):
     print(op_add_line)
     print("\n")
 
+user_name = "ayush"
 
 # write code lines to file
-f = open("workflow_file.py","w")
+f = open("workflow_file_"+workflow_name+"_"+user_name+".py","w")
 f.write("from services import service_req\n")
 f.write(f'def {workflow_name}({workflow_params}):\n')
 f.write(f'\tD = dict()\n')
