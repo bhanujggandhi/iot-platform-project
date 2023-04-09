@@ -36,8 +36,7 @@ userCollectionSchema = {
 
 }
 
-
-ActiveNodeSchema = {
+activeNodeCollectionSchema = {
     '$jsonSchema': {
         'bsonType': 'object',
         'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
@@ -75,7 +74,7 @@ ActiveNodeSchema = {
 
 }
 
-ApiSchema = {
+ApiCollectionSchema = {
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -93,7 +92,7 @@ ApiSchema = {
     }
 }
 
-AppSchema = {
+AppCollectionSchema = {
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -126,7 +125,7 @@ AppSchema = {
     }
 }
 
-TrafficSchema = {
+TrafficCollectionSchema = {
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -165,3 +164,4 @@ TrafficSchema = {
         }
     }
 }
+
