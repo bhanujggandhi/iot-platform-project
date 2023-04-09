@@ -76,9 +76,49 @@ userCollectionSchema = {
 
 }
 
-# (DB:userDB , collection:ApiCollection)
+<<<<<<< HEAD
+activeNodeCollectionSchema = {
+    '$jsonSchema': {
+        'bsonType': 'object',
+        'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
+        'properties': {
+            'VMid': {
+                'bsonType': 'string',
+                'description': 'must be a string and is required'
+            },
+            'IP': {
+                'bsonType': 'string',
+                'description': 'must be a string and is required'
+            },
+            'Port': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'CPU': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'Memory': {
+                'bsonType': 'int',
+                'description': 'must be a int and is required'
+            },
+            'OtherStats': {
+                'bsonType': 'array',
+                'description': 'must be an array and is required',
+                'items': {
+                    'bsonType': 'string',
+                    'description': 'must be a string if the field is present'
+                }
+            }
+        }
+    }
 
-ApiSchema = {
+}
+=======
+# (DB:userDB , collection:ApiCollection)
+>>>>>>> f88369ce3a234a67067b6fb3220dd98dab57ee74
+
+ApiCollectionSchema = {
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -96,9 +136,13 @@ ApiSchema = {
     }
 }
 
+<<<<<<< HEAD
+AppCollectionSchema = {
+=======
 # (DB:userDB , collection:AppCollection )
 
 AppSchema = {
+>>>>>>> f88369ce3a234a67067b6fb3220dd98dab57ee74
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -132,7 +176,7 @@ AppSchema = {
 }
 # (DB:userDB , collection:TrafficCollection )
 
-TrafficSchema = {
+TrafficCollectionSchema = {
     'validator': {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -171,3 +215,7 @@ TrafficSchema = {
         }
     }
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> f88369ce3a234a67067b6fb3220dd98dab57ee74

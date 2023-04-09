@@ -38,12 +38,14 @@ def initialize():
     # print(module_data["modules"])
     module = module_data["modules"]
     for service in module:
-        cmd = f"docker stop {service} && docker rm {service}"
+        cmd = f"sudo docker stop {service} && sudo docker rm {service}"
+        os.system(cmd)
+        cmd = f"sudo docker rmi {service}"
         os.system(cmd)
         generate_docker_image(service)
-        cmd = f"docker build -t {service} {service}"
+        cmd = f"sudo docker build -t {service} {service}"
         os.system(cmd)
-        cmd = f"docker run --name {service} {service}"
+        cmd = f"sudo docker run --name {service} -d -p 8080:80 {service}"
         os.system(cmd)
         upservices.append(service)
 
@@ -60,12 +62,12 @@ def serve_deploy(appid: str):
     with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
 
-    cmd = f"docker stop {appid} && docker remove{appid}"
+    cmd = f"sudo docker stop {appid} && docker remove{appid}"
     os.system(cmd)
     generate_docker_image(appid)
-    cmd = f"docker build -t {appid} {appid}"
+    cmd = f"sudo docker build -t {appid} {appid}"
     os.system(cmd)
-    cmd = f"docker run --name {appid} -d -p 8080:80 {appid}"
+    cmd = f"sudo docker run --name {appid} -d -p 8080:80 {appid}"
     os.system(cmd)
     deployed_apps.append(appid)
     # os.remove(appid)
@@ -78,7 +80,7 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"docker stop {appid}"
+    cmd = f"sudo docker stop {appid}"
     os.system(cmd)
 
 
@@ -87,7 +89,7 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"docker start {appid}"
+    cmd = f"sudo docker start {appid}"
     os.system(cmd)
 
 
@@ -96,9 +98,9 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"docker stop {appid} && docker rm {appid}"
+    cmd = f"sudo docker stop {appid} && docker rm {appid}"
     os.system(cmd)
-    cmd = f"docker rmi {appid}"
+    cmd = f"sudo docker rmi {appid}"
     os.system(cmd)
     deployed_apps.remove(appid)
 

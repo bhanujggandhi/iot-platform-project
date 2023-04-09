@@ -1,97 +1,53 @@
-
 # (DB:ActiveNodeDB , collection:activeNodeCollection)
 ActiveNodeSchema = {
-    '$jsonSchema': {
-        'bsonType': 'object',
-        'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
-        'properties': {
-            'VMid': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["VMid", "IP", "Port", "CPU", "Memory", "OtherStats"],
+        "properties": {
+            "VMid": {"bsonType": "string", "description": "must be a string and is required"},
+            "IP": {"bsonType": "string", "description": "must be a string and is required"},
+            "Port": {"bsonType": "int", "description": "must be a int and is required"},
+            "CPU": {"bsonType": "int", "description": "must be a int and is required"},
+            "Memory": {"bsonType": "int", "description": "must be a int and is required"},
+            "OtherStats": {
+                "bsonType": "array",
+                "description": "must be an array and is required",
+                "items": {"bsonType": "string", "description": "must be a string if the field is present"},
             },
-            'IP': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
-            },
-            'Port': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'CPU': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'Memory': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'OtherStats': {
-                'bsonType': 'array',
-                'description': 'must be an array and is required',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string if the field is present'
-                }
-            }
-        }
+        },
     }
-
 }
 # (DB:userDB, collection:userCollection )
 userCollectionSchema = {
-    '$jsonSchema': {
-        'bsonType': 'object',
-        'required': ['developerId', 'developerName', 'Role', 'email', 'password', 'Appids'],
-        'properties': {
-            'developerId': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["name", "role", "email", "password"],
+        "properties": {
+            "name": {"bsonType": "string", "description": "must be a string and is required"},
+            "role": {
+                "enum": ["AppAdmin", "AppDeveloper", "PlatformAdmin"],
+                "description": "can only be one of the enum values and is required",
             },
-            'developerName': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+            "email": {"bsonType": "string", "description": "must be a string and is required"},
+            "password": {"bsonType": "string", "description": "must be a string and is required"},
+            "appids": {
+                "bsonType": "array",
+                "description": "must be an array and is required",
+                "items": {"bsonType": "string", "description": "must be a string if the field is present"},
             },
-            'Role': {
-                'enum': ['AppAdmin', 'AppDeveloper', 'PlatformAdmin'],
-                'description': 'can only be one of the enum values and is required'
-            },
-            'email': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
-            },
-            'password': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
-            },
-            'Appids': {
-                'bsonType': 'array',
-                'description': 'must be an array and is required',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string if the field is present'
-                }
-            }
-        }
+        },
     }
-
 }
 
 # (DB:userDB , collection:ApiCollection)
 
 ApiSchema = {
-    'validator': {
-        '$jsonSchema': {
-            'bsonType': 'object',
-            'title': 'Student Object Validation',
-            'required': ['ApiKey', 'developerId'],
-            'properties': {
-                'ApiKey': {
-                    'bsonType': 'string'
-                },
-                'developerId': {
-                    'bsonType': 'string'
-                }
-            }
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "title": "Student Object Validation",
+            "required": ["ApiKey", "developerId"],
+            "properties": {"ApiKey": {"bsonType": "string"}, "developerId": {"bsonType": "string"}},
         }
     }
 }
@@ -99,75 +55,50 @@ ApiSchema = {
 # (DB:userDB , collection:AppCollection )
 
 AppSchema = {
-    'validator': {
-        '$jsonSchema': {
-            'bsonType': 'object',
-            'title': 'Student Object Validation',
-            'required': ['AppId', 'AppName', 'Services', 'Sensors', 'Users', 'Version'],
-            'properties': {
-                'AppId': {
-                    'bsonType': 'string'
-                },
-                'AppName': {
-                    'bsonType': 'string'
-                },
-                'Services': {
-                    'bsonType': 'array',
-                    'items': {'bsonType': 'string'}
-                },
-                'Sensors': {
-                    'bsonType': 'array',
-                    'items': {'bsonType': 'string'}
-                },
-                'Users': {
-                    'bsonType': 'array',
-                    'items': {'bsonType': 'string'}
-                },
-                'Version': {
-                    'bsonType': 'double'
-                }
-            }
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "title": "Student Object Validation",
+            "required": ["AppId", "AppName", "Services", "Sensors", "Users", "Version"],
+            "properties": {
+                "AppId": {"bsonType": "string"},
+                "AppName": {"bsonType": "string"},
+                "Services": {"bsonType": "array", "items": {"bsonType": "string"}},
+                "Sensors": {"bsonType": "array", "items": {"bsonType": "string"}},
+                "Users": {"bsonType": "array", "items": {"bsonType": "string"}},
+                "Version": {"bsonType": "double"},
+            },
         }
     }
 }
 # (DB:userDB , collection:TrafficCollection )
 
 TrafficSchema = {
-    'validator': {
-        '$jsonSchema': {
-            'bsonType': 'object',
-            'title': 'Student Object Validation',
-            'required': ['ApiKey', 'Api'],
-            'properties': {
-                'ApiKey': {
-                    'bsonType': 'string'
-                },
-                'Api': {
-                    'bsonType': 'string'
-                },
-                'InputParams': {
-                    'bsonType': 'array',
-                    'items': {
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "title": "Student Object Validation",
+            "required": ["ApiKey", "Api"],
+            "properties": {
+                "ApiKey": {"bsonType": "string"},
+                "Api": {"bsonType": "string"},
+                "InputParams": {
+                    "bsonType": "array",
+                    "items": {
                         "oneOf": [
                             {"bsonType": "string"},
                             {"bsonType": "int"},
                             {"bsonType": "date"},
                             {"bsonType": "bool"},
                             {"bsonType": "double"},
-                            {"bsonType": "objectId"}
+                            {"bsonType": "objectId"},
                         ]
-                    }
+                    },
                 },
-                'Status': {
-                    'bsonType': 'int'
-                },
-                'StartTime': {
-                    'bsonType': 'timestamp'
-                },
-                'EndTime': {
-                    'bsonType': 'timestamp'
-                }
-            }
+                "Status": {"bsonType": "int"},
+                "StartTime": {"bsonType": "timestamp"},
+                "EndTime": {"bsonType": "timestamp"},
+            },
         }
     }
 }
