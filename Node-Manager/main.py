@@ -11,11 +11,7 @@ from storage import downloadFile
 app = FastAPI()
 produce = Produce()
 
-ports = [8081, 8082, 8083, 8084, 8085, 8086, 8087]
-ip = "127.0.0.1"
-taken = [False] * 7
 upservices = {}
-deployed_apps = []
 
 
 def generate_docker_image(service):
