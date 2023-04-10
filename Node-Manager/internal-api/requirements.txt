@@ -1,5 +1,12 @@
+beanie==1.18.0
 fastapi==0.95.0
-pydantic==1.10.7
+motor==3.1.2
+passlib==1.7.4
 PyJWT==2.6.0
+pymongo==4.3.3
 python-decouple==3.8
+python_bcrypt==0.3.2
+requests==2.28.2
 uvicorn==0.21.1
+azure-storage-blob
+python-multipart

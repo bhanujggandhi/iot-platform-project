@@ -5,12 +5,16 @@ import sys
 from typing import List, Union
 
 import uvicorn
+from beanie import init_beanie
+from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import deployement, tasks, user
+from motor.motor_asyncio import AsyncIOMotorClient
+from routers import deployement, user
 from utils.jwt_handler import decodeJWT, signJWT
 
-sys.path.append("..")
+MONGO_URI = config("mongoKey")
+
 
 app = FastAPI(
     title="Internal APIs",
@@ -53,4 +57,4 @@ async def verify_token(token: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", log_level="info", port=8000, workers=4)
+    uvicorn.run("main:app", host="0.0.0.0", log_level="trace", port=80, workers=4)

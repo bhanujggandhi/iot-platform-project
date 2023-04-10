@@ -4,6 +4,7 @@ import socket
 import zipfile
 from typing import Union
 
+import uvicorn
 from decouple import config
 from fastapi import FastAPI
 from Messenger import Produce
@@ -12,7 +13,6 @@ from storage import downloadFile
 
 app = FastAPI()
 produce = Produce()
-
 
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
@@ -49,6 +49,9 @@ def get_ip():
     return currip
 
 
+ip = get_ip()
+
+
 @app.get("/init")
 def initialize():
     upservices = {}
@@ -69,8 +72,8 @@ def initialize():
         assign_port = get_free_port()
         cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
         os.system(cmd)
-        upservices[service] = assign_port
-        data = {"name": service, "port": assign_port, "ip": get_ip(), "active": True}
+        upservices[service] = {"port": assign_port, "ip": ip}
+        data = {"name": service, "port": assign_port, "ip": ip, "active": True}
         collection.insert_one(data)
 
     return {"services": upservices}
@@ -78,8 +81,23 @@ def initialize():
 
 @app.post("/deploy/{appid}")
 def serve_deploy(appid: str):
-    if appid in deployed_apps:
-        return {"err": "app already deployed"}
+    db = client["apps"]
+    collection = db.app
+    exists = collection.find_one({"name": appid})
+    ip = get_ip()
+
+    if exists:
+        if exists["active"] == False:
+            assign_port = get_free_port()
+            cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
+            os.system(cmd)
+            exists["port"] = assign_port
+            exists["ip"] = ip
+
+            res = collection.update_one({"name": appid}, exists)
+            return res
+        else:
+            return exists
 
     status = downloadFile("apps", f"{appid}.zip", ".")
 
@@ -95,20 +113,23 @@ def serve_deploy(appid: str):
     os.system(cmd)
     assign_port = get_free_port()
     cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
-    # cmd = f"docker run -d --add-host host.docker.internal:host-gateway --name {appid} -p {ports[2]}:80 {appid}"
-
     os.system(cmd)
+
+    data = {"name": appid, "port": assign_port, "ip": ip, "active": True}
+
+    collection.insert_one(data)
+
     message = {
         "receiver_email": "gandhibhanuj@gmail.com",
         "subject": f"{appid} Deployed",
-        "body": f"Hello Developer,\nWe have successfully deployed your app at http://localhost:8080",
+        "body": f"Hello Developer,\nWe have successfully deployed your app at http://{ip}:{assign_port}",
     }
 
     produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
     deployed_apps.append(appid)
-    # os.remove(appid)
+    # os.remove(f"{appid}.zip")
 
-    return {"success": "deployed", "port": assign_port, "ip": "0.0.0.0"}
+    return {"success": "deployed", "port": assign_port, "ip": ip}
 
 
 @app.post("/app/stop/{appid}")
@@ -184,3 +205,12 @@ def restart_node(service: str):
 @app.get("/configure_node/{service}")
 def configure_node(service: str):
     return {"node configured": service}
+
+
+if __name__ == "__main__":
+    db = client["services"]
+    collection = db.services
+    res = collection.find_one({"name": "node-manager"})
+    if not res:
+        collection.insert_one({"name": "node-manager", "ip": ip, "port": 8000})
+    uvicorn.run("main:app", host="0.0.0.0", log_level="trace", port=8000, workers=4)
