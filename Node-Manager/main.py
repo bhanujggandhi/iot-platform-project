@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import zipfile
 from typing import Union
 
@@ -32,6 +33,14 @@ CMD ["python3", "main.py"]"""
     f.write(s)
 
 
+def get_free_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    addr = s.getsockname()
+    s.close()
+    return addr[1]
+
+
 @app.get("/init")
 def initialize():
     with open("module.json", "r") as f:
@@ -46,7 +55,8 @@ def initialize():
         generate_docker_image(service)
         cmd = f"docker build -t {service} {service}"
         os.system(cmd)
-        cmd = f"docker run --name {service} -d -p {ports[i]}:80 {service}"
+        assign_port = get_free_port()
+        cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
         os.system(cmd)
         upservices[service] = ports[i]
 
@@ -70,7 +80,8 @@ def serve_deploy(appid: str):
     generate_docker_image(appid)
     cmd = f"docker build -t {appid} {appid}"
     os.system(cmd)
-    cmd = f"docker run --name {appid} -d --rm -p {ports[-1]}:80 {appid}"
+    assign_port = get_free_port()
+    cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
     # cmd = f"docker run -d --add-host host.docker.internal:host-gateway --name {appid} -p {ports[2]}:80 {appid}"
 
     os.system(cmd)
@@ -84,7 +95,7 @@ def serve_deploy(appid: str):
     deployed_apps.append(appid)
     # os.remove(appid)
 
-    return {"success": "deployed", "port": ports[-1], "ip": "0.0.0.0"}
+    return {"success": "deployed", "port": assign_port, "ip": "0.0.0.0"}
 
 
 @app.post("/app/stop/{appid}")
@@ -101,8 +112,11 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"docker run --name {appid} -d --rm -p {ports[4]}:80 {appid}"
+    assign_port = get_free_port()
+    cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
     os.system(cmd)
+
+    return {"success": "deployed", "port": assign_port, "ip": "0.0.0.0"}
 
 
 @app.post("/app/remove/{appid}")
