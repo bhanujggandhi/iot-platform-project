@@ -1,22 +1,18 @@
+import json
+import logging
+import time
+import uuid
 
 import requests
-from fastapi import FastAPI
-import json
-from fastapi import APIRouter
-from pymongo import MongoClient
-import uuid
 from decouple import config
-import logging
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
-import time
+from pymongo import MongoClient
 
+Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
 
-Headers = {'X-M2M-Origin': 'admin:admin',
-           'Content-Type': 'application/json;ty=4'}
-
-mongoKey = config('mongoKey')
-fetchAPI = config('Om2mFetchAPI')
+mongoKey = config("mongoKey")
+fetchAPI = config("Om2mFetchAPI")
 
 
 app = FastAPI()
@@ -26,8 +22,7 @@ app = FastAPI()
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler("sensor_logger.log")
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -43,11 +38,9 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     if response.status_code >= 400:
         error_message = response.json().get("error") or response.text
-        logger.error(
-            f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
+        logger.error(f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
     else:
-        logger.info(
-            f"{request.method} {request.url.path} - {response.status_code} - {body}")
+        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {body}")
 
     return response
 
@@ -81,7 +74,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
         return {"data": timeSeriesData}
     elif fetchType == "RealTime":
         realTimeData = []
-        while (duration):
+        while duration:
             data = collection.find({"sensorID": sensorID})
             if data == None:
                 return {"data": []}
@@ -102,7 +95,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
     #     return {"error": res.status_code}
 
 
-@ app.post("/register")
+@app.post("/register")
 async def register(sensorName: str = "", sensorType: str = "", sensorLocation: str = "", sensorDescription: str = ""):
     """
     This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
@@ -111,17 +104,29 @@ async def register(sensorName: str = "", sensorType: str = "", sensorLocation: s
     db = client.SensorDB
     collection = db.SensorMetadata
     sensorID = str(uuid.uuid4())
-    sensor = {"sensorID": sensorID, "sensorName": sensorName, "sensorType": sensorType, "sensorLocation": sensorLocation,
-              "sensorDescription": sensorDescription}
+    sensor = {
+        "sensorID": sensorID,
+        "sensorName": sensorName,
+        "sensorType": sensorType,
+        "sensorLocation": sensorLocation,
+        "sensorDescription": sensorDescription,
+    }
     collection.insert_one(sensor)
     return {"sensorID": sensorID}
+
 
 # bind api to retrive sensor ID from any or all of the sensor metadata
 # if more than one sensor metadata is provided, the api will return the sensor ID of any one of the sensors that matches the metadata
 
 
-@ app.get("/bind")
-async def bind(devId: str = None, sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None):
+@app.get("/bind")
+async def bind(
+    devId: str = None,
+    sensorName: str = None,
+    sensorType: str = None,
+    sensorLocation: str = None,
+    sensorDescription: str = None,
+):
     """
     This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
     """
@@ -145,7 +150,7 @@ async def bind(devId: str = None, sensorName: str = None, sensorType: str = None
     return {"sensorID": sensor["sensorID"]}
 
 
-@ app.delete("/deregister")
+@app.delete("/deregister")
 async def deregister(sensorID: str = ""):
     """
     This function will be responsible for deregistering the sensor with the SensorDB and sending the status code to the ReqstManager.

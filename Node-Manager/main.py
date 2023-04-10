@@ -11,7 +11,7 @@ from storage import downloadFile
 app = FastAPI()
 produce = Produce()
 
-ports = [8001, 8002, 8003, 8004, 8005, 8006, 8007]
+ports = [8081, 8082, 8083, 8084, 8085, 8086, 8087]
 ip = "127.0.0.1"
 taken = [False] * 7
 upservices = []
@@ -40,7 +40,7 @@ def initialize():
         module_data = json.load(f)
     # print(module_data["modules"])
     module = module_data["modules"]
-    for service in module:
+    for i, service in enumerate(module):
         cmd = f"docker stop {service} && docker rm {service}"
         os.system(cmd)
         cmd = f"docker rmi {service}"
@@ -48,7 +48,7 @@ def initialize():
         generate_docker_image(service)
         cmd = f"docker build -t {service} {service}"
         os.system(cmd)
-        cmd = f"sudo docker run --name {service} -d -p 8080:80 {service}"
+        cmd = f"docker run --name {service} -d -p {ports[i]}:80 {service}"
         os.system(cmd)
         upservices.append(service)
 
@@ -70,10 +70,12 @@ def serve_deploy(appid: str):
     generate_docker_image(appid)
     cmd = f"docker build -t {appid} {appid}"
     os.system(cmd)
-    cmd = f"docker run --name {appid} -d -p 8081:80 {appid}"
+    cmd = f"docker run --name {appid} -d -p {ports[2]}:80 {appid}"
+    cmd = f"docker run -d --add-host host.docker.internal:host-gateway --name {appid} -p {ports[2]}:80 {appid}"
+
     os.system(cmd)
     message = {
-        "receiver_email": "mayankgupta12321@gmail.com",
+        "receiver_email": "gandhibhanuj@gmail.com",
         "subject": f"{appid} Deployed",
         "body": f"Hello Developer,\nWe have successfully deployed your app at http://localhost:8080",
     }
