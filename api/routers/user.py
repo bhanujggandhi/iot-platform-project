@@ -83,10 +83,9 @@ def user_login(user=Body(...)):
 
     found_user = collection.find_one({"email": user["email"]})
 
-    if found_user is None:
-        return {"error": "Wrong login details!"}
-
-    if verify_password(user["password"], found_user["password"]):
+    if found_user:
+        password = verify_password(user["password"], found_user["password"])
+        if not password:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
         return signJWT(user["email"])
-
-    return {"error": "Wrong login details!"}
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
