@@ -1,16 +1,16 @@
 import json
 import sys
+from typing import Annotated
 
 from decouple import config
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException, status, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from passlib.context import CryptContext
 from pymongo import MongoClient
-
 from utils.jwt_handler import signJWT
-from utils.model import UserLoginSchema, UserSchema
-from utils.validate import check_user
 
 router = APIRouter()
+security = HTTPBasic()
 
 sys.path.append("..")
 
@@ -47,8 +47,8 @@ def user_helper_read(user) -> dict:
 @router.get("/")
 # This will get current user! TODO CHANGE
 async def read_users():
-    db = client["userDB"]
-    collection = db.userCollection
+    db = client["user"]
+    collection = db.user
     users = []
     for x in collection.find({}):
         users.append(user_helper_read(x))
@@ -58,8 +58,8 @@ async def read_users():
 
 @router.get("/all")
 async def all_users():
-    db = client["userDB"]
-    collection = db.userCollection
+    db = client["user"]
+    collection = db.user
     users = []
     for x in collection.find({}):
         users.append(user_helper_read(x))
@@ -69,8 +69,12 @@ async def all_users():
 
 @router.post("/signup")
 def create_user(user=Body(...)):
-    db = client["userDB"]
-    collection = db.userCollection
+    db = client["user"]
+    collection = db.user
+    found_user = collection.find_one({"email": user["email"]})
+    if found_user:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
+
     user["password"] = get_password_hash(user["password"])
     collection.insert_one(user)
     return signJWT(user["email"])
@@ -78,8 +82,8 @@ def create_user(user=Body(...)):
 
 @router.post("/login")
 def user_login(user=Body(...)):
-    db = client["userDB"]
-    collection = db.userCollection
+    db = client["user"]
+    collection = db.user
 
     found_user = collection.find_one({"email": user["email"]})
 

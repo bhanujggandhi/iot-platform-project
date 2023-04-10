@@ -4,14 +4,18 @@ import socket
 import zipfile
 from typing import Union
 
+from decouple import config
 from fastapi import FastAPI
 from Messenger import Produce
+from pymongo import MongoClient
 from storage import downloadFile
 
 app = FastAPI()
 produce = Produce()
 
-upservices = {}
+
+mongokey = config("mongoKey")
+client = MongoClient(mongokey)
 
 
 def generate_docker_image(service):
@@ -37,8 +41,19 @@ def get_free_port():
     return addr[1]
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    currip = s.getsockname()[0]
+    s.close()
+    return currip
+
+
 @app.get("/init")
 def initialize():
+    upservices = {}
+    db = client["services"]
+    collection = db.services
     with open("module.json", "r") as f:
         module_data = json.load(f)
     module = module_data["modules"]
@@ -52,9 +67,11 @@ def initialize():
         cmd = f"docker build -t {service} {service}"
         os.system(cmd)
         assign_port = get_free_port()
-        cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
+        cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
         os.system(cmd)
-        upservices[service] = ports[i]
+        upservices[service] = assign_port
+        data = {"name": service, "port": assign_port, "ip": get_ip(), "active": True}
+        collection.insert_one(data)
 
     return {"services": upservices}
 

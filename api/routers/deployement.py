@@ -12,7 +12,7 @@ from utils.jwt_bearer import JWTBearer
 from utils.storage import uploadFile
 from utils.verify_zip import verify_zip
 
-sys.path.append("../")
+sys.path.append("..")
 
 router = APIRouter()
 
@@ -20,11 +20,10 @@ router = APIRouter()
 CONTAINER_NAME = config("deploy_app_container_name")
 
 
-async def my_task(time: int, file: UploadFile = File(...)):
+async def schedule_deployement_task(time: int, file: UploadFile = File(...)):
     await asyncio.sleep(time)
     # Logic or api call will come here to deploy
     try:
-        print("hello")
         fname = file.filename
         fname = fname.split(".")[0]
         res = requests.post(f"http://127.0.0.1:8001/deploy/{fname}")
@@ -82,7 +81,7 @@ async def schedule_task(background_tasks: BackgroundTasks, time: int = 0, file: 
         status = uploadFile(CONTAINER_NAME, ".", file.filename)
         fname = file.filename
         fname = fname.split(".")[0]
-        background_tasks.add_task(my_task, time, file)
+        background_tasks.add_task(schedule_deployement_task, time, file)
         return {"message": "Task scheduled", "status": json.dumps(status)}
     else:
         os.remove(file.filename)
