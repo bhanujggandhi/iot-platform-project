@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import deployement, tasks, user
 from utils.jwt_handler import decodeJWT, signJWT
 
-sys.path.append("..")
+# sys.path.append("..")
 
 app = FastAPI(
     title="Internal APIs",
@@ -50,3 +50,7 @@ async def generate_token(userid: str):
 @app.get("/apitoken/verify/{token}", tags=["auth"])
 async def verify_token(token: str):
     return decodeJWT(token)
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", log_level="info", port=8000, workers=4)
