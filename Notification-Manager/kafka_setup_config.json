@@ -12,7 +12,6 @@
         "sasl.mechanisms":"PLAIN",
         "sasl.username":"NHBIPVRIJJLKMWNW",
         "sasl.password":"zEAyw6WE+5iKhypjIULJZSAG2V86EtF63iGcNDbyWzHirS1ejryBeTdjjuVaHkww",
-        "group.id":"python_example_group_1",
         "auto.offset.reset":"earliest"
     }
 }
