@@ -2,10 +2,9 @@ import json
 import os
 import zipfile
 from typing import Union
-import json
-from Messenger import Produce
 
 from fastapi import FastAPI
+from Messenger import Produce
 from storage import downloadFile
 
 app = FastAPI()
@@ -14,7 +13,7 @@ produce = Produce()
 ports = [8081, 8082, 8083, 8084, 8085, 8086, 8087]
 ip = "127.0.0.1"
 taken = [False] * 7
-upservices = []
+upservices = {}
 deployed_apps = []
 
 
@@ -28,7 +27,6 @@ WORKDIR /app
 RUN pip install -r requirements.txt
 
 CMD ["python3", "main.py"]"""
-    # CMD ["uvicorn", " """ +str(service)+""".main:app", "--host", "0.0.0.0", "--port", ' """ +str(ports[3])+ """' ]"""
 
     f = open("./" + str(service) + "/Dockerfile", "w")
     f.write(s)
@@ -38,8 +36,8 @@ CMD ["python3", "main.py"]"""
 def initialize():
     with open("module.json", "r") as f:
         module_data = json.load(f)
-    # print(module_data["modules"])
     module = module_data["modules"]
+
     for i, service in enumerate(module):
         cmd = f"docker stop {service} && docker rm {service}"
         os.system(cmd)
@@ -50,7 +48,7 @@ def initialize():
         os.system(cmd)
         cmd = f"docker run --name {service} -d -p {ports[i]}:80 {service}"
         os.system(cmd)
-        upservices.append(service)
+        upservices[service] = ports[i]
 
     return {"services": upservices}
 
@@ -65,13 +63,15 @@ def serve_deploy(appid: str):
     with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
 
-    cmd = f"docker stop {appid} && docker remove{appid}"
+    cmd = f"docker stop {appid}"
+    os.system(cmd)
+    cmd = f"docker rmi {appid}"
     os.system(cmd)
     generate_docker_image(appid)
     cmd = f"docker build -t {appid} {appid}"
     os.system(cmd)
-    cmd = f"docker run --name {appid} -d -p {ports[2]}:80 {appid}"
-    cmd = f"docker run -d --add-host host.docker.internal:host-gateway --name {appid} -p {ports[2]}:80 {appid}"
+    cmd = f"docker run --name {appid} -d --rm -p {ports[-1]}:80 {appid}"
+    # cmd = f"docker run -d --add-host host.docker.internal:host-gateway --name {appid} -p {ports[2]}:80 {appid}"
 
     os.system(cmd)
     message = {
@@ -84,7 +84,7 @@ def serve_deploy(appid: str):
     deployed_apps.append(appid)
     # os.remove(appid)
 
-    return {"success": "deployed", "port": "8080", "ip": "0.0.0.0"}
+    return {"success": "deployed", "port": ports[-1], "ip": "0.0.0.0"}
 
 
 @app.post("/app/stop/{appid}")
@@ -92,7 +92,7 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"sudo docker stop {appid}"
+    cmd = f"docker stop {appid}"
     os.system(cmd)
 
 
@@ -101,7 +101,7 @@ def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
 
-    cmd = f"sudo docker start {appid}"
+    cmd = f"docker run --name {appid} -d --rm -p {ports[4]}:80 {appid}"
     os.system(cmd)
 
 
@@ -109,10 +109,7 @@ def serve_deploy(appid: str):
 def serve_deploy(appid: str):
     if not appid in deployed_apps:
         return {"err": "app not deployed"}
-
-    cmd = f"sudo docker stop {appid} && docker rm {appid}"
-    os.system(cmd)
-    cmd = f"sudo docker rmi {appid}"
+    cmd = f"docker rmi {appid}"
     os.system(cmd)
     deployed_apps.remove(appid)
 
@@ -121,9 +118,9 @@ def serve_deploy(appid: str):
 def create_node(service: str):
     generate_docker_image(service)
     # os.system("sudo docker ps -aq | xargs docker stop | xargs docker rm")
-    cmd = "sudo docker build -t " + str(service) + " ./" + str(service)
+    cmd = "docker build -t " + str(service) + " ./" + str(service)
     os.system(cmd)
-    cmd = f"sudo docker run --name {service} {service}"
+    cmd = f"docker run --name {service} {service}"
     os.system(cmd)
     port = 0
     for i in range(len(ports)):
@@ -136,23 +133,23 @@ def create_node(service: str):
 
 @app.get("/start_node/{service}")
 def start_node(service: str):
-    cmd = f"sudo docker start $(sudo docker ps -aqf 'name={service}')"
+    cmd = f"docker start {service}"
     os.system(cmd)
     return {"service started": service}
 
 
 @app.get("/stop_node/{service}")
 def stop_node(service: str):
-    cmd = f"sudo docker stop $(sudo docker ps -aqf 'name={service}')"
+    cmd = f"docker stop {service}"
     os.system(cmd)
     return {"node stopped": service}
 
 
 @app.get("/restart_node/{service}")
 def restart_node(service: str):
-    cmd = f"sudo docker stop $(sudo docker ps -aqf 'name={service}')"
+    cmd = f"docker stop {service}"
     os.system(cmd)
-    cmd = f"sudo docker start $(sudo docker ps -aqf 'name={service}')"
+    cmd = f"docker start {service}"
     os.system(cmd)
     return {"node restarted": service}
 

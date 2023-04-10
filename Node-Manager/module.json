@@ -1,3 +1,3 @@
 {
-  "modules": ["notification-manager", "sensor-manager"]
+  "modules": ["notification-manager", "sensor-manager", "internal-api"]
 }
