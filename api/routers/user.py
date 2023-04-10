@@ -3,6 +3,7 @@ import sys
 
 from decouple import config
 from fastapi import APIRouter, Body
+from passlib.context import CryptContext
 from pymongo import MongoClient
 
 from utils.jwt_handler import signJWT
@@ -16,6 +17,21 @@ sys.path.append("..")
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# ===================================
+# Password utilites
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+# ===================================
+
 
 def user_helper_read(user) -> dict:
     return {
@@ -25,15 +41,6 @@ def user_helper_read(user) -> dict:
         "email": user["email"],
         "password": user["password"],
         "appids": user["Appids"],
-    }
-
-
-def user_helper_register(user) -> dict:
-    return {
-        "name": user.name,
-        "role": user.role,
-        "email": user.email,
-        "password": user.password,
     }
 
 
@@ -64,6 +71,7 @@ async def all_users():
 def create_user(user=Body(...)):
     db = client["userDB"]
     collection = db.userCollection
+    user["password"] = get_password_hash(user["password"])
     collection.insert_one(user)
     return signJWT(user["email"])
 
@@ -73,12 +81,12 @@ def user_login(user=Body(...)):
     db = client["userDB"]
     collection = db.userCollection
 
-    users = collection.find_one({"email": user["email"]})
+    found_user = collection.find_one({"email": user["email"]})
 
-    if users is None:
+    if found_user is None:
         return {"error": "Wrong login details!"}
 
-    if check_user(user, users):
+    if verify_password(user["password"], found_user["password"]):
         return signJWT(user["email"])
 
     return {"error": "Wrong login details!"}
