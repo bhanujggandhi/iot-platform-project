@@ -6,7 +6,7 @@ produce = Produce()
 
 message = {
     "service": "",
-    "app": "myapp3",
+    "app": "myapp4",
     "operation": "remove",
 }
 

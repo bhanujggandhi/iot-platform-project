@@ -179,7 +179,7 @@ def remove_app(appid: str):
     active = collection.find_one({"name": appid})
     if not active:
         return {"status": "False", "msg": "App is not deployed!"}
-    cmd = f"docker stop {appid}"
+    cmd = f"docker stop {appid} && docker rm {appid}"
     os.system(cmd)
     cmd = f"docker rmi {appid}"
     os.system(cmd)
@@ -209,7 +209,7 @@ def initialize():
         cmd = f"docker build -t {service} {service}"
         os.system(cmd)
         assign_port = get_free_port()
-        cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
+        cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
         os.system(cmd)
         upservices[service] = {"port": assign_port, "ip": ip}
         data = {"name": service, "port": assign_port, "ip": ip, "active": True}
@@ -263,7 +263,7 @@ def remove_node(service: str):
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
-    cmd = f"docker stop {service}"
+    cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     cmd = f"docker rmi {service}"
     os.system(cmd)
@@ -277,7 +277,7 @@ def stop_node(service: str):
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
-    cmd = f"docker stop {service}"
+    cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     data = {"active": False}
     collection.find_one_and_update({"name": service}, {"$set": data})

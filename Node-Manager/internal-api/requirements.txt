@@ -10,3 +10,4 @@ requests==2.28.2
 uvicorn==0.21.1
 azure-storage-blob
 python-multipart
+confluent_kafka
