@@ -35,15 +35,20 @@ class Consume:
         self.topic = topic
         self.data = json.load(open(KAFKA_CONFIG_FILE))
         self.kafka_consumer_config = self.data["kafka_consumer_config"]
+        self.kafka_consumer_config["group.id"] = f"group_{self.topic}"
         self.consumer = Consumer(self.kafka_consumer_config)
         self.consumer.subscribe([self.topic])
 
     def pull(self):
-        msg = self.consumer.poll(-1)
-        if msg is None:
-            return {"status": False, "key": None, "value": "Mesage Not Found"}
+        # Checking for message till the message is not found.
+        while True:
+            msg = self.consumer.poll(1.0)
+            if msg is not None:
+                break
+
         if msg.error():
             return {"status": False, "key": None, "value": format(msg.error())}
+
         else:
             # Extract the (optional) key and value, and print.
             # topic=msg.topic()
