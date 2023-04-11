@@ -47,6 +47,7 @@ class Consume:
                 break
 
         if msg.error():
+            print(msg)
             return {"status": False, "key": None, "value": format(msg.error())}
 
         else:
