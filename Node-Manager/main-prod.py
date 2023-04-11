@@ -5,8 +5,8 @@ from Messenger import Produce
 produce = Produce()
 
 message = {
-    "service": "internal-api",
-    "app": "",
+    "service": "",
+    "app": "myapp3",
     "operation": "remove",
 }
 

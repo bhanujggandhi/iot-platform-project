@@ -1,21 +1,23 @@
 import asyncio
 import json
+import os
 import shutil
 import sys
-import requests
 
+import requests
 import uvicorn
 from decouple import config
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from pymongo import MongoClient
-
 from utils.jwt_bearer import JWTBearer
+from utils.Messenger import Produce
 from utils.storage import uploadFile
 from utils.verify_zip import verify_zip
 
 sys.path.append("..")
 
 router = APIRouter()
+produce = Produce()
 
 
 CONTAINER_NAME = config("deploy_app_container_name")
@@ -34,10 +36,14 @@ async def schedule_deployement_task(time: int, file: UploadFile = File(...)):
             return
         fname = file.filename
         fname = fname.split(".")[0]
-        res = requests.post(f"http://{node['ip']}:{node['port']}/deploy/{fname}")
-        os.remove(file.filename)
+        message = {
+            "service": "",
+            "app": fname,
+            "operation": "deploy",
+        }
+        produce.push("topic_node_manager", "topic_internal_api", json.dumps(message))
+        os.system(f"rm -rf {file.filename}")
         print(status)
-        print(res.text)
     except:
         print("invalid")
     print("Task Deployed")
@@ -66,10 +72,14 @@ async def upload_zip_file(file: UploadFile = File(...)):
             return
         fname = file.filename
         fname = fname.split(".")[0]
-        res = requests.post(f"http://{node['ip']}:{node['port']}/deploy/{fname}")
-        os.remove(file.filename)
+        message = {
+            "service": "",
+            "app": fname,
+            "operation": "deploy",
+        }
+        produce.push("topic_node_manager", "topic_internal_api", json.dumps(message))
+        os.system(f"rm -rf {file.filename}")
         print(status)
-        print(res.text)
         # return res
     else:
         os.remove(file.filename)

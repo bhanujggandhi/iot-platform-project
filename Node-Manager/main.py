@@ -5,17 +5,18 @@ import zipfile
 from typing import Union
 
 import uvicorn
+from confluent_kafka import Consumer, Producer
 from decouple import config
 from fastapi import FastAPI
 from Messenger import Produce
 from pymongo import MongoClient
 from storage import downloadFile
 
-app = FastAPI()
-produce = Produce()
-
+KAFKA_CONFIG_FILE = "kafka_setup_config.json"
+TOPIC = "topic_node_manager"
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
+producer = Produce()
 
 
 def generate_docker_image(service):
@@ -52,35 +53,41 @@ def get_ip():
 ip = get_ip()
 
 
-@app.get("/init")
-def initialize():
-    upservices = {}
-    db = client["services"]
-    collection = db.services
-    with open("module.json", "r") as f:
-        module_data = json.load(f)
-    module = module_data["modules"]
+class Consume:
+    def __init__(self, topic):
+        self.topic = topic
+        self.data = json.load(open(KAFKA_CONFIG_FILE))
+        self.kafka_consumer_config = self.data["kafka_consumer_config"]
+        self.kafka_consumer_config["group.id"] = f"group_{self.topic}"
+        self.consumer = Consumer(self.kafka_consumer_config)
+        self.consumer.subscribe([self.topic])
 
-    for i, service in enumerate(module):
-        cmd = f"docker stop {service} && docker rm {service}"
-        os.system(cmd)
-        cmd = f"docker rmi {service}"
-        os.system(cmd)
-        generate_docker_image(service)
-        cmd = f"docker build -t {service} {service}"
-        os.system(cmd)
-        assign_port = get_free_port()
-        cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
-        os.system(cmd)
-        upservices[service] = {"port": assign_port, "ip": ip}
-        data = {"name": service, "port": assign_port, "ip": ip, "active": True}
-        collection.insert_one(data)
+    def pull(self):
+        # Checking for message till the message is not found.
+        while True:
+            msg = self.consumer.poll(1.0)
+            if msg is not None:
+                break
 
-    return {"services": upservices}
+        if msg.error():
+            return {"status": False, "key": None, "value": msg.error()}
+
+        else:
+            # Extract the (optional) key and value, and print.
+            key = msg.key().decode("utf-8")
+            value = msg.value().decode("utf-8")
+            if msg.headers():
+                for header in msg.headers():
+                    print("Header key: {}, Header value: {}".format(header[0], header[1]))
+            return {"status": True, "key": key, "value": value}
 
 
-@app.post("/deploy/{appid}")
-def serve_deploy(appid: str):
+# =============================================
+# App Utils
+# =============================================
+
+
+def deploy_app(appid: str):
     db = client["apps"]
     collection = db.app
     exists = collection.find_one({"name": appid})
@@ -126,91 +133,216 @@ def serve_deploy(appid: str):
     }
 
     produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
-    deployed_apps.append(appid)
-    # os.remove(f"{appid}.zip")
+    os.system(f"rm -rf {appid}.zip")
+    os.system(f"rm -rf {appid}")
 
-    return {"success": "deployed", "port": assign_port, "ip": ip}
+    return {"success": "deployed", "port": f"{assign_port}", "ip": ip}
 
 
-@app.post("/app/stop/{appid}")
-def serve_deploy(appid: str):
-    if not appid in deployed_apps:
-        return {"err": "app not deployed"}
-
+def stop_app(appid: str):
+    db = client["apps"]
+    collection = db.app
+    active = collection.find_one({"name": appid})
+    if not active:
+        return {"status": "False", "msg": "App is not deployed!"}
     cmd = f"docker stop {appid}"
     os.system(cmd)
+    data = {"active": False}
+    collection.find_one_and_update({"name": service}, {"$set": data})
+    return data
 
 
-@app.post("/app/start/{appid}")
-def serve_deploy(appid: str):
-    if not appid in deployed_apps:
-        return {"err": "app not deployed"}
-
+def start_app(appid: str):
+    db = client["apps"]
+    collection = db.app
+    active = collection.find_one({"name": appid})
+    if not active:
+        return {"status": "False", "msg": "App is not deployed!"}
+    cmd = f"docker stop {appid}"
+    os.system(cmd)
+    cmd = f"docker rmi {appid}"
+    os.system(cmd)
+    generate_docker_image(appid)
+    cmd = f"docker build -t {appid} {appid}"
+    os.system(cmd)
     assign_port = get_free_port()
     cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
     os.system(cmd)
+    data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+    collection.find_one_and_update({"name": service}, {"$set": data})
+    return data
 
-    return {"success": "deployed", "port": assign_port, "ip": "0.0.0.0"}
 
-
-@app.post("/app/remove/{appid}")
-def serve_deploy(appid: str):
-    if not appid in deployed_apps:
-        return {"err": "app not deployed"}
+def remove_app(appid: str):
+    db = client["apps"]
+    collection = db.app
+    active = collection.find_one({"name": appid})
+    if not active:
+        return {"status": "False", "msg": "App is not deployed!"}
+    cmd = f"docker stop {appid}"
+    os.system(cmd)
     cmd = f"docker rmi {appid}"
     os.system(cmd)
-    deployed_apps.remove(appid)
+    collection.find_one_and_delete({"name": appid})
+    return {"status": "True", "msg": "App removed"}
 
 
-@app.post("/create_node/{service}")
+# =============================================
+# Service Utils
+# =============================================
+
+
+def initialize():
+    upservices = {}
+    db = client["services"]
+    collection = db.services
+    with open("module.json", "r") as f:
+        module_data = json.load(f)
+    module = module_data["modules"]
+
+    for i, service in enumerate(module):
+        cmd = f"docker stop {service} && docker rm {service}"
+        os.system(cmd)
+        cmd = f"docker rmi {service}"
+        os.system(cmd)
+        generate_docker_image(service)
+        cmd = f"docker build -t {service} {service}"
+        os.system(cmd)
+        assign_port = get_free_port()
+        cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
+        os.system(cmd)
+        upservices[service] = {"port": assign_port, "ip": ip}
+        data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+        collection.insert_one(data)
+
+    return {"services": upservices}
+
+
 def create_node(service: str):
+    db = client["services"]
+    collection = db.services
+    cmd = f"docker stop {service} && docker rm {service}"
+    os.system(cmd)
+    cmd = f"docker rmi {service}"
+    os.system(cmd)
     generate_docker_image(service)
-    # os.system("sudo docker ps -aq | xargs docker stop | xargs docker rm")
-    cmd = "docker build -t " + str(service) + " ./" + str(service)
+    cmd = f"docker build -t {service} {service}"
     os.system(cmd)
-    cmd = f"docker run --name {service} {service}"
+    assign_port = get_free_port()
+    cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
     os.system(cmd)
-    port = 0
-    for i in range(len(ports)):
-        if not taken[i]:
-            port = ports[i]
-            taken[i] = True
-            break
-    return {"service_status": "NODE CREATED!!", "IP": ip, "PORT": port}
+    data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+    collection.insert_one(data)
+    return data
 
 
-@app.get("/start_node/{service}")
 def start_node(service: str):
-    cmd = f"docker start {service}"
+    db = client["services"]
+    collection = db.services
+    active = collection.find_one({"name": service})
+    if not active:
+        return {"status": "False", "msg": "Node is not in our database, please create one"}
+    cmd = f"docker stop {service}"
     os.system(cmd)
-    return {"service started": service}
+    cmd = f"docker rmi {service}"
+    os.system(cmd)
+    generate_docker_image(service)
+    cmd = f"docker build -t {service} {service}"
+    os.system(cmd)
+    assign_port = get_free_port()
+    cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
+    os.system(cmd)
+    data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+    collection.find_one_and_update({"name": service}, {"$set": data})
+    return data
 
 
-@app.get("/stop_node/{service}")
+def remove_node(service: str):
+    db = client["services"]
+    collection = db.services
+    active = collection.find_one({"name": service})
+    if not active:
+        return {"status": "False", "msg": "Node is not in our database, please create one"}
+    cmd = f"docker stop {service}"
+    os.system(cmd)
+    cmd = f"docker rmi {service}"
+    os.system(cmd)
+    collection.find_one_and_delete({"name": service})
+    return {"status": "True", "msg": "Service removed"}
+
+
 def stop_node(service: str):
+    db = client["services"]
+    collection = db.services
+    active = collection.find_one({"name": service})
+    if not active:
+        return {"status": "False", "msg": "Node is not in our database, please create one"}
     cmd = f"docker stop {service}"
     os.system(cmd)
-    return {"node stopped": service}
+    data = {"active": False}
+    collection.find_one_and_update({"name": service}, {"$set": data})
+    return {"status": "True", "msg": "service stopped successfully"}
 
 
-@app.get("/restart_node/{service}")
-def restart_node(service: str):
-    cmd = f"docker stop {service}"
-    os.system(cmd)
-    cmd = f"docker start {service}"
-    os.system(cmd)
-    return {"node restarted": service}
+service_func = {
+    "create": create_node,
+    "start": start_node,
+    "stop": stop_node,
+    "init": initialize,
+    "remove": remove_node,
+}
+
+app_func = {"deploy": deploy_app, "start": start_app, "stop": stop_app, "remove": remove_app}
+
+produce = Produce()
 
 
-@app.get("/configure_node/{service}")
-def configure_node(service: str):
-    return {"node configured": service}
+def utilise_message(src, value):
+    value = json.loads(value)
+    if value["service"] == "" and value["app"] == "":
+        message = {"status": "False", "msg": "No valid service or app provided"}
+        produce.push(src, TOPIC, json.dumps(message))
+    if value["service"] != "":
+        if value["operation"] not in service_func.keys():
+            message = {"status": "False", "msg": f"No valid operation provided for the {value['service']}"}
+            produce.push(src, TOPIC, json.dumps(message))
+        else:
+            if value["operation"] == "init":
+                res = service_func[value["operation"]]()
+            else:
+                res = service_func[value["operation"]](value["service"])
+            message = {"status": "True", "msg": res}
+            produce.push(src, TOPIC, json.dumps(message))
+    if value["app"] != "":
+        if value["operation"] not in app_func.keys():
+            message = {"status": "False", "msg": f"No valid operation provided for the {value['app']}"}
+            produce.push(src, TOPIC, json.dumps(message))
+        else:
+            res = app_func[value["operation"]](value["app"])
+            try:
+                message = json.dumps({"status": "True", "msg": res})
+            except:
+                message = {"status": "True", "msg": "deployed"}
+            produce.push(src, TOPIC, json.dumps(message))
+
+
+"""
+Expected json from producer of topic topic_node_manager
+
+{
+    "service": "",
+    "app": "",
+    "operation": ""
+}
+
+"""
 
 
 if __name__ == "__main__":
-    db = client["services"]
-    collection = db.services
-    res = collection.find_one({"name": "node-manager"})
-    if not res:
-        collection.insert_one({"name": "node-manager", "ip": ip, "port": 8000})
-    uvicorn.run("main:app", host="0.0.0.0", log_level="trace", port=8000, workers=4)
+    consume = Consume(TOPIC)
+    while True:
+        resp = consume.pull()
+        if resp["status"] == False:
+            print(resp["value"])
+        else:
+            utilise_message(resp["key"], resp["value"])
