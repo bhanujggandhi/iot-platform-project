@@ -4,10 +4,6 @@ from Messenger import Produce
 
 produce = Produce()
 
-message = {
-    "service": "",
-    "app": "myapp4",
-    "operation": "remove",
-}
+message = {"service": "", "app": "myapp1", "operation": "remove", "id": "a12", "src": "topic_internal_api"}
 
-produce.push("topic_node_manager", "topic_internal_api", json.dumps(message))
+produce.push("topic_node_manager", "", json.dumps(message))

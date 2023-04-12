@@ -5,6 +5,7 @@ import zipfile
 from typing import Union
 
 import uvicorn
+from bson import ObjectId
 from confluent_kafka import Consumer, Producer
 from decouple import config
 from fastapi import FastAPI
@@ -16,6 +17,7 @@ KAFKA_CONFIG_FILE = "kafka_setup_config.json"
 TOPIC = "topic_node_manager"
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
+db = client["platform"]
 producer = Produce()
 
 
@@ -87,9 +89,9 @@ class Consume:
 # =============================================
 
 
-def deploy_app(appid: str):
-    db = client["apps"]
-    collection = db.app
+def deploy_app(appid: str, userid: str):
+    collection = db.App
+    collection.create_index("name", unique=True)
 
     ip = get_ip()
 
@@ -109,7 +111,7 @@ def deploy_app(appid: str):
     cmd = f"docker run --name {appid} -d -p {assign_port}:80 {appid}"
     os.system(cmd)
 
-    data = {"name": appid, "port": assign_port, "ip": ip, "active": True}
+    data = {"name": appid, "port": assign_port, "ip": ip, "active": True, "user": ObjectId(userid)}
 
     collection.find_one_and_delete({"name": appid})
     collection.insert_one(data)
@@ -127,9 +129,8 @@ def deploy_app(appid: str):
     return {"success": "deployed", "port": f"{assign_port}", "ip": ip}
 
 
-def stop_app(appid: str):
-    db = client["apps"]
-    collection = db.app
+def stop_app(appid: str, userid: str):
+    collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
         return {"status": "False", "msg": "App is not deployed!"}
@@ -140,9 +141,8 @@ def stop_app(appid: str):
     return data
 
 
-def start_app(appid: str):
-    db = client["apps"]
-    collection = db.app
+def start_app(appid: str, userid: str):
+    collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
         return {"status": "False", "msg": "App is not deployed!"}
@@ -161,9 +161,8 @@ def start_app(appid: str):
     return data
 
 
-def remove_app(appid: str):
-    db = client["apps"]
-    collection = db.app
+def remove_app(appid: str, userid: str):
+    collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
         return {"status": "False", "msg": "App is not deployed!"}
@@ -182,8 +181,7 @@ def remove_app(appid: str):
 
 def initialize():
     upservices = {}
-    db = client["services"]
-    collection = db.services
+    collection = db.Services
     with open("module.json", "r") as f:
         module_data = json.load(f)
     module = module_data["modules"]
@@ -207,8 +205,7 @@ def initialize():
 
 
 def create_node(service: str):
-    db = client["services"]
-    collection = db.services
+    collection = db.Services
     cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     cmd = f"docker rmi {service}"
@@ -225,8 +222,7 @@ def create_node(service: str):
 
 
 def start_node(service: str):
-    db = client["services"]
-    collection = db.services
+    collection = db.Services
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
@@ -246,8 +242,7 @@ def start_node(service: str):
 
 
 def remove_node(service: str):
-    db = client["services"]
-    collection = db.services
+    collection = db.Services
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
@@ -260,8 +255,7 @@ def remove_node(service: str):
 
 
 def stop_node(service: str):
-    db = client["services"]
-    collection = db.services
+    collection = db.Services
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
@@ -285,8 +279,9 @@ app_func = {"deploy": deploy_app, "start": start_app, "stop": stop_app, "remove"
 produce = Produce()
 
 
-def utilise_message(src, value):
+def utilise_message(value):
     value = json.loads(value)
+    src = value["src"]
     if value["service"] == "" and value["app"] == "":
         message = {"status": "False", "msg": "No valid service or app provided"}
         produce.push(src, TOPIC, json.dumps(message))
@@ -305,8 +300,10 @@ def utilise_message(src, value):
         if value["operation"] not in app_func.keys():
             message = {"status": "False", "msg": f"No valid operation provided for the {value['app']}"}
             produce.push(src, TOPIC, json.dumps(message))
+            print(message)
         else:
-            res = app_func[value["operation"]](value["app"])
+            print(value)
+            res = app_func[value["operation"]](value["app"], value["id"])
             try:
                 message = json.dumps({"status": "True", "msg": res})
             except:
@@ -320,17 +317,20 @@ Expected json from producer of topic topic_node_manager
 {
     "service": "",
     "app": "",
-    "operation": ""
+    "operation": "",
+    "id":"",
+    "src":""
 }
 
 """
 
 
 if __name__ == "__main__":
-    consume = Consume(TOPIC)
+    consume = Consume("topic_internal_api")
     while True:
         resp = consume.pull()
         if resp["status"] == False:
             print(resp["value"])
         else:
-            utilise_message(resp["key"], resp["value"])
+            # utilise_message(resp["value"])
+            print(resp)
