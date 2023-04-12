@@ -2,9 +2,11 @@ import json
 import sys
 from typing import Annotated
 
+import requests
 from bson import ObjectId
 from decouple import config
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi.responses import HTMLResponse
 from pymongo import MongoClient
 from utils.jwt_bearer import JWTBearer
 from utils.jwt_handler import decodeJWT
@@ -117,3 +119,29 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     produce.push("topic_node_manager", "", json.dumps(message))
 
     return {"status": 200, "data": "We have removed your app successfully"}
+
+
+@router.get("/app/{app_name:path}")
+async def apps(app_name: str = Path(...)):
+    print(app_name)
+    arr = app_name.split("/")
+    ret = app_collection.find_one({"name": arr[0]})
+    if ret == None:
+        return HTMLResponse(
+            content="""<html><head><title>some title</title></head><body><h1>Invalid Application</h1></body></html>""",
+            status_code=400,
+        )
+    else:
+        if ret["active"] == False:
+            return HTMLResponse(
+                content="""<html><head><title>some title</title></head><body><h1>Application is not Running</h1></body></html>""",
+                status_code=400,
+            )
+        else:
+            url = "http://" + ret["ip"] + ":" + str(ret["port"])
+            for i in range(1, len(arr)):
+                url += "/" + str(arr[i])
+            print(url)
+            response = requests.get(url).json()
+
+    return HTMLResponse(content=response, status_code=200)
