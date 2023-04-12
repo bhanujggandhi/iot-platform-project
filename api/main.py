@@ -10,7 +10,7 @@ from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from routers import deployment, user, apps
+from routers import deployment, user, apps, features
 from utils.jwt_handler import decodeJWT, signJWT
 
 MONGO_URI = config("mongoKey")
@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(user.router, prefix="/user", tags=["user"])
 app.include_router(deployment.router, prefix="/deploy", tags=["deployement"])
 app.include_router(apps.router, prefix="/apps", tags=["Deployed App"])
+app.include_router(features.router, prefix="/features", tags=["Platform Features"])
 
 
 @app.get("/", tags=["test"])

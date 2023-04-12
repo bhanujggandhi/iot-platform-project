@@ -188,7 +188,7 @@ def remove_app(appid: str, userid: str):
 
 def initialize():
     upservices = {}
-    collection = db.Services
+    collection = db.Service
     with open("module.json", "r") as f:
         module_data = json.load(f)
     module = module_data["modules"]
@@ -229,7 +229,7 @@ def create_node(service: str):
 
 
 def start_node(service: str):
-    collection = db.Services
+    collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
@@ -249,7 +249,7 @@ def start_node(service: str):
 
 
 def remove_node(service: str):
-    collection = db.Services
+    collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
@@ -262,7 +262,7 @@ def remove_node(service: str):
 
 
 def stop_node(service: str):
-    collection = db.Services
+    collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
         return {"status": "False", "msg": "Node is not in our database, please create one"}
