@@ -1,5 +1,4 @@
-import subprocess
+import os
 
-subprocess.Popen(["open", "-a", "Terminal.app", "python", "main.py"])
-
-subprocess.run(["python", "main-prod.py"])
+os.system("python main-prod.py")
+os.system("python main.py")
