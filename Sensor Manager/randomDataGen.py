@@ -13,7 +13,7 @@ data_frequency = 3
 no_of_params = 3
 
 
-url = 'http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/DEVICE-3/Data'
+url = 'http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/DEVICE-4/Data'
 headers = {
     'X-M2M-Origin': 'admin:admin',
     'Content-Type': 'application/json;ty=23'
