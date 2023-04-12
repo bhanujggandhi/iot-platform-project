@@ -10,7 +10,7 @@ from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from routers import deployement, user
+from routers import deployment, user
 from utils.jwt_handler import decodeJWT, signJWT
 
 MONGO_URI = config("mongoKey")
