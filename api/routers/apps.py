@@ -44,7 +44,7 @@ def populate_user(app):
 
 
 def apps_helper_read(app) -> dict:
-    # app = populate_user(app)
+    app = populate_user(app)
     return {"id": str(app["_id"]), "name": app["name"], "user": str(app["user"]), "ip": app["ip"], "port": app["port"]}
 
 
