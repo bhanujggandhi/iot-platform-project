@@ -5,9 +5,9 @@ from Messenger import Produce
 produce = Produce()
 
 message = {
-    "service": "internal-api",
+    "service": "init",
     "app": "",
-    "operation": "start",
+    "operation": "init",
     "id": "a12",
     "src": "topic_bootstrap",
 }
