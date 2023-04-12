@@ -2,7 +2,7 @@ import json
 import sys
 
 from decouple import config
-from fastapi import APIRouter, Body, HTTPException, status, Depends
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from passlib.context import CryptContext
 from pymongo import MongoClient
 from utils.jwt_handler import signJWT
@@ -73,7 +73,8 @@ def create_user(user=Body(...)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
 
     user["password"] = get_password_hash(user["password"])
-    collection.insert_one(user)
+    response = collection.insert_one(user)
+    print(response)
     return signJWT(user["email"])
 
 
