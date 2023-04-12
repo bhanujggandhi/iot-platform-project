@@ -46,6 +46,18 @@ logger.addHandler(handler)
 
 #     return response
 
+@app.get("/fetchsensors")
+async def fetchSensors():
+    """
+    This function will return all the available sensors.
+    """
+    client = MongoClient(mongoKey)
+    db = client.SensorDB
+    collection = db.SensorMetadata
+    cursor = collection.find({}, {"_id": 0})
+    documents = list(cursor)
+    client.close()
+    return {"data" : documents}
 
 @app.get("/fetch")
 async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, startTime: int = None, endTime: int = None):
@@ -75,11 +87,20 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                     timeSeriesData.append(d)
 
         return {"data": timeSeriesData}
+    elif fetchType == "Instant":
+        realTimeData = []
+        data = collection.find({"sensorID": sensorID})
+        if data == None:
+            return {"data": []}
+        else:
+            realTimeData = data[0]["data"][-1]
+
+        return {"data": realTimeData}
     elif fetchType == "RealTime":
         realTimeData = []
         while duration:
             data = collection.find({"sensorID": sensorID})
-            print(data)
+            # print(data)
             if data == None:
                 return {"data": []}
             for cur in data:
