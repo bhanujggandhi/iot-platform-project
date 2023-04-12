@@ -1,0 +1,75 @@
+{
+    "foo":{
+        "url":"http://127.0.0.1:8000/foo",
+        "version":1.0,
+        "input":[
+            {
+                "name":"inp1",
+                "dtype":"int",
+                "desc":"Input1 for foo"
+            },
+            {
+                "name":"inp2",
+                "dtype":"str",
+                "desc":"Input2 for foo"
+            }
+        ],
+
+        "output":[
+            {
+                "name":"key1",
+                "dtype":"int",
+                "desc":"Output1 for foo"
+            },
+            {
+                "name":"key2",
+                "dtype":"str",
+                "desc":"Output2 for foo"
+            }
+        ]
+    },
+
+    "foobar":{
+        "url":"http://127.0.0.1:8000/foobar",
+        "version":1.0,
+        "input":[],
+
+        "output":[
+            {
+                "name":"msg",
+                "dtype":"str",
+                "desc":"Message from foobar"
+            }
+        ]
+    },
+
+    "bar":{
+        "url":"http://127.0.0.1:8000/bar",
+        "version":1.0,
+        "input":[
+            {
+                "name":"inp11",
+                "dtype":"int",
+                "desc":"Input1 of bar"
+            },
+            {
+                "name":"inp21",
+                "dtype":"str",
+                "desc":"Input2 of bar"
+            }
+        ],
+
+        "output":[
+            {
+                "name":"key11",
+                "dtype":"int",
+                "desc":"abcd"
+            },
+            {
+                "name":"key21",
+                "dtype":"str",
+                "desc":"abcd"
+            }
+        ]
+    }
+}
