@@ -18,7 +18,7 @@
         "output":[
             {
                 "name":"key1",
-                "dtype":"str",
+                "dtype":"int",
                 "desc":"Output1 for foo"
             },
             {
@@ -62,7 +62,7 @@
         "output":[
             {
                 "name":"key11",
-                "dtype":"str",
+                "dtype":"int",
                 "desc":"abcd"
             },
             {
