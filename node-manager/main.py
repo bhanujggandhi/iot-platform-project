@@ -22,7 +22,7 @@ producer = Produce()
 
 
 def generate_docker_image(service):
-    s = """FROM python:3.8
+    s = """FROM python:3.9
 
 COPY . /app/
 
@@ -288,6 +288,7 @@ produce = Produce()
 
 def utilise_message(value):
     value = json.loads(value)
+    print(value)
     src = value["src"]
     if value["service"] == "" and value["app"] == "":
         message = {"status": "False", "msg": "No valid service or app provided"}
@@ -333,7 +334,7 @@ Expected json from producer of topic topic_node_manager
 
 
 if __name__ == "__main__":
-    consume = Consume("topic_internal_api")
+    consume = Consume(TOPIC)
     while True:
         resp = consume.pull()
         if resp["status"] == False:
