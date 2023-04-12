@@ -332,5 +332,5 @@ if __name__ == "__main__":
         if resp["status"] == False:
             print(resp["value"])
         else:
-            # utilise_message(resp["value"])
-            print(resp)
+            utilise_message(resp["value"])
+            # print(resp)

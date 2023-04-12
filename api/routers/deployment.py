@@ -93,7 +93,7 @@ async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: Upl
             "id": curr_user["id"],
             "src": "topic_internal_api",
         }
-        produce.push("topic_node_manager", "topic_internal_api", json.dumps(message))
+        produce.push("topic_node_manager", "", json.dumps(message))
         return {"status": "True", "msg": "File is deploying safely. Please check back after 5 minutes"}
     else:
         os.remove(file.filename)
