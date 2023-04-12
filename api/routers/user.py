@@ -37,6 +37,8 @@ def get_password_hash(password):
 # ===================================
 
 
+# ===================================
+# Database decoding utility
 def user_helper_read(user) -> dict:
     return {
         "id": str(user["_id"]),
@@ -46,23 +48,7 @@ def user_helper_read(user) -> dict:
     }
 
 
-@router.get("/", dependencies=[Depends(JWTBearer())])
-# This will get current user! TODO CHANGE
-async def read_users(token: Annotated[str, Depends(JWTBearer())]):
-    curr_user = decodeJWT(token)
-    collection = db.User
-    user = collection.find_one({"_id": ObjectId(curr_user["id"])})
-    return {"status": "200", "data": user_helper_read(user)}
-
-
-@router.get("/all")
-async def all_users():
-    collection = db.User
-    users = []
-    for x in collection.find({}):
-        users.append(user_helper_read(x))
-
-    return {"status": "200", "data": users}
+# ===================================
 
 
 @router.post("/signup")
@@ -90,3 +76,21 @@ def user_login(user: UserLogin = Body(...)):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
         return signJWT(str(found_user["_id"]), found_user["name"], found_user["role"], found_user["email"])
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+
+
+@router.get("/", dependencies=[Depends(JWTBearer())])
+async def all_users():
+    collection = db.User
+    users = []
+    for x in collection.find({}):
+        users.append(user_helper_read(x))
+
+    return {"status": "200", "data": users}
+
+
+@router.get("/me", dependencies=[Depends(JWTBearer())])
+async def get_curr_user(token: Annotated[str, Depends(JWTBearer())]):
+    curr_user = decodeJWT(token)
+    collection = db.User
+    user = collection.find_one({"_id": ObjectId(curr_user["id"])})
+    return {"status": "200", "data": user_helper_read(user)}
