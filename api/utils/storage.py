@@ -99,7 +99,7 @@ def listFiles(containerName):
     try:
         blob_list = container_client.list_blobs()
         fileList = [blob.name for blob in blob_list]
-        return {"status": True, "fileList": fileList}
+        return {"status": True, "file_list": fileList}
     except:
         return {"status": False, "message": "Network Error"}
 
