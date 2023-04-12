@@ -92,6 +92,13 @@ class Consume:
 def deploy_app(appid: str, userid: str):
     collection = db.App
     collection.create_index("name", unique=True)
+    user_collection = db.User
+    curr_user = user_collection.find_one({"_id": ObjectId(userid)})
+
+    if not curr_user:
+        produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
+
+        return {"success": "False", "err": "We were unable to deploy the app"}
 
     ip = get_ip()
 
@@ -117,7 +124,7 @@ def deploy_app(appid: str, userid: str):
     collection.insert_one(data)
 
     message = {
-        "receiver_email": "gandhibhanuj@gmail.com",
+        "receiver_email": curr_user["email"],
         "subject": f"{appid} Deployed",
         "body": f"Hello Developer,\nWe have successfully deployed your app at http://{ip}:{assign_port}",
     }
