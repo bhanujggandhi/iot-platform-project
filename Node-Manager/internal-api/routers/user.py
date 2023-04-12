@@ -1,16 +1,13 @@
 import json
 import sys
-from typing import Annotated
 
 from decouple import config
 from fastapi import APIRouter, Body, HTTPException, status, Depends
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from passlib.context import CryptContext
 from pymongo import MongoClient
 from utils.jwt_handler import signJWT
 
 router = APIRouter()
-security = HTTPBasic()
 
 sys.path.append("..")
 

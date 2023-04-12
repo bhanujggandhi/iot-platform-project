@@ -1,18 +1,20 @@
 import json
 import sys
 
-from notification_utils import sendEmail
+from notification_utils import Notification
 from Messenger import Consume
-
 
 TOPIC = "topic_notification"
 
+# Creating object of class Notification
+notification = Notification()
 
 # utilising message as per need
-def utilise_message(key, value):
+def utilise_message(value):
     value = json.loads(value)
     receiver_email, subject, body = value["receiver_email"], value["subject"], value["body"]
-    sendEmail(receiver_email, subject, body)
+    # print(receiver_email, subject, body)
+    notification.notify(receiver_email, subject, body)
 
 
 # Driver Code
@@ -23,4 +25,5 @@ if __name__ == "__main__":
         if resp["status"] == False:
             print(resp["value"])
         else:
-            utilise_message(resp["key"], resp["value"])
+            # print(resp["key"], resp["value"])
+            utilise_message(resp["value"])
