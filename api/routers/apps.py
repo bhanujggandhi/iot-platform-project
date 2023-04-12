@@ -74,6 +74,13 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())]):
 @router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
+    curr_app = app_collection.find_one({"name": appid})
+    if not curr_app:
+        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+
+    if str(curr_app["_id"]) != curr_user["id"]:
+        return {"status": 401, "data": f"You are not authorized to do that"}
+
     message = {"service": "", "app": appid, "operation": "stop", "id": curr_user["id"], "src": "topic_internal_api"}
     produce.push("topic_node_manager", "", json.dumps(message))
 
@@ -83,6 +90,13 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
 @router.post("/{appid}/start", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
+    curr_app = app_collection.find_one({"name": appid})
+    if not curr_app:
+        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+
+    if str(curr_app["_id"]) != curr_user["id"]:
+        return {"status": 401, "data": f"You are not authorized to do that"}
+
     message = {"service": "", "app": appid, "operation": "start", "id": curr_user["id"], "src": "topic_internal_api"}
     produce.push("topic_node_manager", "", json.dumps(message))
 
@@ -92,6 +106,13 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
 @router.post("/{appid}/remove", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
+    curr_app = app_collection.find_one({"name": appid})
+    if not curr_app:
+        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+
+    if str(curr_app["_id"]) != curr_user["id"]:
+        return {"status": 401, "data": f"You are not authorized to do that"}
+
     message = {"service": "", "app": appid, "operation": "remove", "id": curr_user["id"], "src": "topic_internal_api"}
     produce.push("topic_node_manager", "", json.dumps(message))
 
