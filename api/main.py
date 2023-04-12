@@ -37,8 +37,7 @@ app.add_middleware(
 
 
 app.include_router(user.router, prefix="/user", tags=["user"])
-app.include_router(deployement.router, prefix="/deploy", tags=["deployement"])
-# app.include_router(tasks.router)
+app.include_router(deployment.router, prefix="/deploy", tags=["deployement"])
 
 
 @app.get("/", tags=["test"])

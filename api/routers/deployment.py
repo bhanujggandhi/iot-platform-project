@@ -11,7 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Up
 from pymongo import MongoClient
 from utils.jwt_bearer import JWTBearer
 from utils.Messenger import Produce
-from utils.storage import uploadFile, listFiles, downloadFile, deleteFile
+from utils.storage import deleteFile, downloadFile, listFiles, uploadFile
 from utils.verify_zip import verify_zip
 
 sys.path.append("..")
@@ -110,9 +110,27 @@ async def schedule_task(background_tasks: BackgroundTasks, time: int = 0, file: 
         shutil.copyfileobj(file.file, f)
 
     # Verify file structure
-    if verify_zip(f"{file.filename}"):
-        # Upload to the cloud
-        status = uploadFile(CONTAINER_NAME, ".", file.filename)
+    verified = verify_zip(f"{file.filename}")
+    if not verified is False:
+        uploaded_files = listFiles(CONTAINER_NAME)
+
+        if file.filename in uploaded_files["file_list"]:
+            status = downloadFile(CONTAINER_NAME, file.filename, "./verify/")
+            print(status)
+            if verify_zip(f"./verify/{file.filename}") == verified:
+                os.system(f"rm -rf ./verify/{file.filename}")
+                os.system(f"rm -rf ./{file.filename}")
+            else:
+                status = deleteFile(CONTAINER_NAME, file.filename)
+                print(status)
+                status = uploadFile(CONTAINER_NAME, ".", file.filename)
+                print(status)
+                os.system(f"rm -rf ./verify/{file.filename}")
+                os.system(f"rm -rf ./{file.filename}")
+        else:
+            # Upload to the cloud
+            status = uploadFile(CONTAINER_NAME, ".", file.filename)
+
         fname = file.filename
         fname = fname.split(".")[0]
         background_tasks.add_task(schedule_deployement_task, time, file)
