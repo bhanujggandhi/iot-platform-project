@@ -90,28 +90,15 @@ class Consume:
 def deploy_app(appid: str):
     db = client["apps"]
     collection = db.app
-    exists = collection.find_one({"name": appid})
+
     ip = get_ip()
-
-    if exists:
-        if exists["active"] == False:
-            assign_port = get_free_port()
-            cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
-            os.system(cmd)
-            exists["port"] = assign_port
-            exists["ip"] = ip
-
-            res = collection.update_one({"name": appid}, exists)
-            return res
-        else:
-            return exists
 
     status = downloadFile("apps", f"{appid}.zip", ".")
 
     with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
 
-    cmd = f"docker stop {appid}"
+    cmd = f"docker stop {appid} && docker rm {appid}"
     os.system(cmd)
     cmd = f"docker rmi {appid}"
     os.system(cmd)
@@ -119,11 +106,12 @@ def deploy_app(appid: str):
     cmd = f"docker build -t {appid} {appid}"
     os.system(cmd)
     assign_port = get_free_port()
-    cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
+    cmd = f"docker run --name {appid} -d -p {assign_port}:80 {appid}"
     os.system(cmd)
 
     data = {"name": appid, "port": assign_port, "ip": ip, "active": True}
 
+    collection.find_one_and_delete({"name": appid})
     collection.insert_one(data)
 
     message = {
