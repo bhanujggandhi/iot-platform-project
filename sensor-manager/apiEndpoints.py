@@ -73,7 +73,7 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
     # find all data in DB
     if fetchType == "TimeSeries":
         data = collection.find({"sensorID": sensorID})
-        print(data)
+        # print(data)
         if data == None:
             return {"data": []}
         timeSeriesData = []
