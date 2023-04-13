@@ -213,7 +213,7 @@ def initialize():
 
 
 def create_node(service: str):
-    collection = db.Services
+    collection = db.Service
     collection.delete_many({"name": service})
     cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
