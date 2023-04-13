@@ -28,7 +28,7 @@ client = MongoClient(mongokey)
 db = client["platform"]
 
 
-async def schedule_deployement_task(time: int, file: UploadFile = File(...)):
+async def schedule_deployement_task(time: int, file: UploadFile = File(...), userid=""):
     await asyncio.sleep(time)
     # Logic or api call will come here to deploy
     try:
@@ -38,8 +38,10 @@ async def schedule_deployement_task(time: int, file: UploadFile = File(...)):
             "service": "",
             "app": fname,
             "operation": "deploy",
+            "id": userid,
+            "src": "topic_internal_api",
         }
-        produce.push("topic_node_manager", "topic_internal_api", json.dumps(message))
+        produce.push("topic_node_manager", "", json.dumps(message))
         os.system(f"rm -rf {file.filename}")
         print(status)
     except:
@@ -107,6 +109,7 @@ async def schedule_task(
     time: int = 0,
     file: UploadFile = File(...),
 ):
+    curr_user = decodeJWT(token)
     # Check filetype
     if file.content_type != "application/zip":
         raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
@@ -137,11 +140,7 @@ async def schedule_task(
             # Upload to the cloud
             status = uploadFile(CONTAINER_NAME, ".", file.filename)
 
-        background_tasks.add_task(
-            schedule_deployement_task,
-            time,
-            file,
-        )
+        background_tasks.add_task(schedule_deployement_task, time, file, curr_user["id"])
         return {"message": "Task scheduled", "status": json.dumps(status)}
     else:
         os.remove(file.filename)
