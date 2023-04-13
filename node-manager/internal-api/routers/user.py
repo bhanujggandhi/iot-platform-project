@@ -31,7 +31,7 @@ def verify_password(plain_password, hashed_password):
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password.encode("utf-8"))
 
 
 # ===================================
@@ -71,7 +71,7 @@ def user_login(user: UserLogin = Body(...)):
     found_user = collection.find_one({"email": user.email})
 
     if found_user:
-        password = verify_password(user.password, found_user["password"])
+        password = verify_password(user.password.encode("utf-8"), found_user["password"])
         if not password:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
         return signJWT(str(found_user["_id"]), found_user["name"], found_user["role"], found_user["email"])

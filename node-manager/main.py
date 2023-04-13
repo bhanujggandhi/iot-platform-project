@@ -118,7 +118,7 @@ def deploy_app(appid: str, userid: str):
     cmd = f"docker run --name {appid} -d -p {assign_port}:80 {appid}"
     os.system(cmd)
 
-    data = {"name": appid, "port": assign_port, "ip": ip, "active": True, "user": ObjectId(userid)}
+    data = {"name": appid, "port": assign_port, "ip": ip, "active": True, "user": str(ObjectId(userid))}
 
     collection.find_one_and_delete({"name": appid})
     collection.insert_one(data)
@@ -251,8 +251,8 @@ def start_node(service: str):
 def remove_node(service: str):
     collection = db.Service
     active = collection.find_one({"name": service})
-    if not active:
-        return {"status": "False", "msg": "Node is not in our database, please create one"}
+    # if not active:
+    #     return {"status": "False", "msg": "Node is not in our database, please create one"}
     cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     cmd = f"docker rmi {service}"
@@ -302,6 +302,7 @@ def utilise_message(value):
                 res = service_func[value["operation"]]()
             else:
                 res = service_func[value["operation"]](value["service"])
+                print(res)
             message = {"status": "True", "msg": res}
             produce.push(src, TOPIC, json.dumps(message))
     if value["app"] != "":
