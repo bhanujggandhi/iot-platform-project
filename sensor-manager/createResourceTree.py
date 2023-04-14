@@ -59,7 +59,7 @@ def create_cnt(uri_ae, cnt_name, cnt_labels="", data_format="json"):
     body = {
         "m2m:cnt": {
             "rn": "{}".format(cnt_name),
-            "mni": 120,
+            "mni": 12,
             "lbl": cnt_labels
         }
     }
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     lbl_ae = ["tds", "water_level", "water_density", "lux", "uv", "color"]
     create_ae(server+cse, ae, lbl_ae)
 
-    node_container_name = "DEVICE-3"
+    node_container_name = "DEVICE-4"
     lbl_cnt = lbl_ae
     create_cnt(server+cse+ae, node_container_name, lbl_cnt)
 

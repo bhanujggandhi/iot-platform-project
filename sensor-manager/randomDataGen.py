@@ -9,11 +9,11 @@ import requests
 import json
 
 
-data_frequency = 3
+data_frequency = 0.5
 no_of_params = 3
 
 
-url = 'http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/DEVICE-3/Data'
+url = 'http://127.0.0.1:5089/~/in-cse/in-name/AE-DEV/DEVICE-4/Data'
 headers = {
     'X-M2M-Origin': 'admin:admin',
     'Content-Type': 'application/json;ty=23'
@@ -32,11 +32,6 @@ response.text
 
 def post_random_data():
 
-    _data_cin = [int(time.time()), random.randint(0, 1)]
-
-    for count in range(no_of_params-2):
-        _data_cin.append(random.randint(1, 400))
-
     cnt = url
     headers = {
         'X-M2M-Origin': 'admin:admin',
@@ -51,6 +46,11 @@ def post_random_data():
         "color"
     ]
     for lbl in lbls:
+        _data_cin = [int(time.time()), random.randint(0, 1)]
+
+        for count in range(no_of_params-2):
+            _data_cin.append(random.randint(1, 400))
+
         payload = {
             "m2m:cin": {
                 "con": "{}".format(_data_cin),
@@ -59,8 +59,8 @@ def post_random_data():
             }
         }
         response = requests.request("POST", cnt, headers=headers, json=payload)
-        print(response.text)
-        time.sleep(1)
+        # print(response.text)
+        # time.sleep(1)
 
     return response.status_code
 
