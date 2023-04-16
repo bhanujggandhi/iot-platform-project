@@ -1,0 +1,12 @@
+topic  = topic_senosor_manager
+
+Expected response from kafka
+        {
+        value['src'] : TARGET_NAME,
+        value['sensorid'] : SENSOR_ID,
+        value['fetchType'] : FETCH_TYPE (realtime, timeseries , instant),
+        value['startTime'] : START_TIME,
+        value['endTime'] : END_TIME,
+        value['duration'] : DURATION
+    
+    }

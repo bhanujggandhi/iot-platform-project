@@ -3,6 +3,7 @@ from confluent_kafka import Producer, Consumer
 
 KAFKA_CONFIG_FILE = 'kafka_setup_config.json'
 
+
 class Produce:
     def __init__(self):
 
@@ -22,9 +23,10 @@ class Produce:
                 )
             )
 
-    def push(self,topic, key, value) :
-        self.producer.produce(topic, value, key, on_delivery=self.delivery_callback)
-        
+    def push(self, topic, key, value):
+        self.producer.produce(
+            topic, value, key, on_delivery=self.delivery_callback)
+
         # Block until the messages are sent.
         self.producer.poll(10)
         self.producer.flush()
@@ -35,39 +37,31 @@ class Consume:
         self.topic = topic
         self.data = json.load(open(KAFKA_CONFIG_FILE))
         self.kafka_consumer_config = self.data['kafka_consumer_config']
+        self.kafka_consumer_config["group.id"] = f"group_{self.topic}"
         self.consumer = Consumer(self.kafka_consumer_config)
         self.consumer.subscribe([self.topic])
 
-
     def pull(self):
-        flag = 1
-        while(flag):
+        # Checking for message till the message is not found.
+        while (True):
+            msg = self.consumer.poll(1.0)
+            if msg is not None:
+                break
 
-            msg = self.consumer.poll(1)
-            if msg is None :
-                flag = 1
-            else:
-                flag = 0
-                # return {
-                #     "status": False,
-                #     "key": None,
-                #     "value" : "Mesage Not Found"
-                # }
-                
         if msg.error():
             return {
                 "status": False,
                 "key": None,
-                "value" : format(msg.error())
+                "value": format(msg.error())
             }
+
         else:
             # Extract the (optional) key and value, and print.
             # topic=msg.topic()
-            key=msg.key().decode('utf-8')
-            value=msg.value().decode('utf-8')
+            key = msg.key().decode('utf-8')
+            value = msg.value().decode('utf-8')
             return {
                 "status": True,
                 "key": key,
-                "value" : value
+                "value": value
             }
-        

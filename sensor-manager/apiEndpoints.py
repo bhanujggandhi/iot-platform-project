@@ -9,7 +9,8 @@ from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
 from pymongo import MongoClient
 
-Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
+Headers = {"X-M2M-Origin": "admin:admin",
+           "Content-Type": "application/json;ty=4"}
 
 mongoKey = config("mongoKey")
 fetchAPI = config("Om2mFetchAPI")
@@ -22,7 +23,8 @@ app = FastAPI()
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler("sensor_logger.log")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -57,27 +59,33 @@ async def fetchSensors():
     cursor = collection.find({}, {"_id": 0})
     documents = list(cursor)
     client.close()
-    return {"data" : documents}
+    return {"data": documents}
+
 
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, startTime: int = None, endTime: int = None):
+async def fetch(sensorid: str = "", fetchType: str = "realtime", duration: int = 1, startTime: int = None, endTime: int = None):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
     1.TimeSeries Data
     2.RealTime Stream
     """
+    fetchType = fetchType.lower()
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorData
     # find all data in DB
-    if fetchType == "TimeSeries":
-        data = collection.find({"sensorID": sensorID})
+    if fetchType == "timeseries":
+        if collection.count_documents({"sensorid": sensorid}) == 0:
+            return {"Error": 400, "Message": "Invalid sensorid/No Data Found"}
+        # using objectID to find
+        data = collection.find({"sensorid": sensorid})
         # print(data)
         if data == None:
             return {"data": []}
         timeSeriesData = []
         for cur in data:
+            # print(cur)
             cur = cur["data"]
             for d in cur:
                 # d =  "[1680961091, 1, 117]"  sample
@@ -87,19 +95,22 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                     timeSeriesData.append(d)
 
         return {"data": timeSeriesData}
-    elif fetchType == "Instant":
+    elif fetchType == "instant":
         realTimeData = []
-        data = collection.find({"sensorID": sensorID})
+        if collection.count_documents({"sensorid": sensorid}) == 0:
+            return {"Error": 400, "Message": "Invalid sensorid/No Data Found"}
+        data = collection.find({"sensorid": sensorid})
+
         if data == None:
             return {"data": []}
         else:
             realTimeData = data[0]["data"][-1]
 
         return {"data": realTimeData}
-    elif fetchType == "RealTime":
+    elif fetchType == "realtime":
         realTimeData = []
         while duration:
-            data = collection.find({"sensorID": sensorID})
+            data = collection.find({"sensorid": sensorid})
             # print(data)
             if data == None:
                 return {"data": []}
@@ -125,24 +136,24 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
 @app.post("/register")
 async def register(sensorName: str = "", sensorType: str = "", sensorLocation: str = "", sensorDescription: str = ""):
     """
-    This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
+    This function will be responsible for registering the sensor with the SensorDB and sending the sensorid to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorMetadata
-    sensorID = str(uuid.uuid4())
-    if sensorID == "" or sensorType == "" or sensorLocation == "" or sensorDescription == "":
+    sensorid = str(uuid.uuid4())
+    if sensorid == "" or sensorType == "" or sensorLocation == "" or sensorDescription == "":
         return {"Error": 400, "Message": "Parms not found"}
 
     sensor = {
-        "sensorID": sensorID,
+        "sensorid": sensorid,
         "sensorName": sensorName,
         "sensorType": sensorType,
         "sensorLocation": sensorLocation,
         "sensorDescription": sensorDescription,
     }
     collection.insert_one(sensor)
-    return {"sensorID": sensorID}
+    return {"sensorid": sensorid}
 
 
 # bind api to retrive sensor ID from any or all of the sensor metadata
@@ -153,7 +164,7 @@ async def bind(
     sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None
 ):
     """
-    This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
+    This function will be responsible for binding the sensor with the SensorDB and sending the sensorid to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
@@ -172,18 +183,18 @@ async def bind(
     sensor = collection.find_one(sensor)
     if sensor is None:
         return {"error": "No sensor found"}
-    return {"sensorID": sensor["sensorID"]}
+    return {"sensorid": sensor["sensorid"]}
 
 
 @app.delete("/deregister")
-async def deregister(sensorID: str = ""):
+async def deregister(sensorid: str = ""):
     """
     This function will be responsible for deregistering the sensor with the SensorDB and sending the status code to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorMetadata
-    sensor = {"sensorID": sensorID}
+    sensor = {"sensorid": sensorid}
     collection.delete_one(sensor)
     return {"status": "success"}
 
