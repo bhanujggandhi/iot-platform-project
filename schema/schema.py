@@ -41,7 +41,7 @@ userCollectionSchema = {
 
 # (DB:userDB , collection:ApiCollection)
 
-ApiSchema = {
+ApiCollectionSchema = {
     "validator": {
         "$jsonSchema": {
             "bsonType": "object",
@@ -54,7 +54,7 @@ ApiSchema = {
 
 # (DB:userDB , collection:AppCollection )
 
-AppSchema = {
+AppCollectionSchema = {
     "validator": {
         "$jsonSchema": {
             "bsonType": "object",
@@ -73,7 +73,7 @@ AppSchema = {
 }
 # (DB:userDB , collection:TrafficCollection )
 
-TrafficSchema = {
+TrafficCollectionSchema = {
     "validator": {
         "$jsonSchema": {
             "bsonType": "object",

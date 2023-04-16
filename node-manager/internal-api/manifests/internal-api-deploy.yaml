@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-api
+  labels:
+    app: internal-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: internal-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: internal-api
+    spec:
+      containers:
+        - name: internal-api
+          image: bhanujggandhi/internal-api
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: internal-api-configmap
+            - secretRef:
+                name: internal-api-secret

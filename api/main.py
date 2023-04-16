@@ -5,12 +5,16 @@ import sys
 from typing import List, Union
 
 import uvicorn
+from beanie import init_beanie
+from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import deployement, tasks, user
+from motor.motor_asyncio import AsyncIOMotorClient
+from routers import deployment, user, apps, features
 from utils.jwt_handler import decodeJWT, signJWT
 
-sys.path.append("..")
+MONGO_URI = config("mongoKey")
+
 
 app = FastAPI(
     title="Internal APIs",
@@ -33,8 +37,9 @@ app.add_middleware(
 
 
 app.include_router(user.router, prefix="/user", tags=["user"])
-app.include_router(deployement.router, prefix="/deploy", tags=["deployement"])
-# app.include_router(tasks.router)
+app.include_router(deployment.router, prefix="/deploy", tags=["deployement"])
+app.include_router(apps.router, prefix="/apps", tags=["Deployed App"])
+app.include_router(features.router, prefix="/features", tags=["Platform Features"])
 
 
 @app.get("/", tags=["test"])
@@ -50,3 +55,7 @@ async def generate_token(userid: str):
 @app.get("/apitoken/verify/{token}", tags=["auth"])
 async def verify_token(token: str):
     return decodeJWT(token)
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", log_level="info", port=8000, workers=4, reload=True)
