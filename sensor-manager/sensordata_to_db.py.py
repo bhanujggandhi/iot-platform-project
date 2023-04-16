@@ -10,12 +10,6 @@ import threading
 Headers = {'X-M2M-Origin': 'admin:admin',
            'Content-Type': 'application/json;ty=4'}
 
-# mongoKey = ""
-# get MongoDB key from config file
-# with open('config.ini') as f:
-#     config = json.load(f)
-#     mongoKey = config['mongoKey']
-
 
 mongoKey = config('mongoKey')
 fetchAPI = config('Om2mFetchAPI')
@@ -65,12 +59,6 @@ def SensorData(freq=1, datathreshold=1000):
             # print(sensors)
             sensorIds = getSensorID(sensors)
 
-            # check if count of documents with a particular sensor type is if 50, delete the the oldest 10 documents where the first entry in data is timestamp
-
-            # for i in sensors:
-            #     if collection.count_documents({"sensorType": i}) >= 50:
-            #         collection.delete_many(
-            #             {"sensorType": i}, limit=50)
 
             for i in sensors:
                 if collection.count_documents({"sensorType": i}) == 0:
