@@ -63,7 +63,7 @@ async def fetchSensors():
 
 
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int = 1, startTime: int = None, endTime: int = None):
+async def fetch(sensorid: str = "", fetchType: str = "realtime", duration: int = 1, startTime: int = None, endTime: int = None):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
@@ -76,10 +76,10 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
     collection = db.SensorData
     # find all data in DB
     if fetchType == "timeseries":
-        if collection.count_documents({"sensorID": sensorID}) == 0:
-            return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
+        if collection.count_documents({"sensorid": sensorid}) == 0:
+            return {"Error": 400, "Message": "Invalid sensorid/No Data Found"}
         # using objectID to find
-        data = collection.find({"sensorID": sensorID})
+        data = collection.find({"sensorid": sensorid})
         # print(data)
         if data == None:
             return {"data": []}
@@ -97,9 +97,9 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
         return {"data": timeSeriesData}
     elif fetchType == "instant":
         realTimeData = []
-        if collection.count_documents({"sensorID": sensorID}) == 0:
-            return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
-        data = collection.find({"sensorID": sensorID})
+        if collection.count_documents({"sensorid": sensorid}) == 0:
+            return {"Error": 400, "Message": "Invalid sensorid/No Data Found"}
+        data = collection.find({"sensorid": sensorid})
 
         if data == None:
             return {"data": []}
@@ -110,7 +110,7 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
     elif fetchType == "realtime":
         realTimeData = []
         while duration:
-            data = collection.find({"sensorID": sensorID})
+            data = collection.find({"sensorid": sensorid})
             # print(data)
             if data == None:
                 return {"data": []}
@@ -136,24 +136,24 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
 @app.post("/register")
 async def register(sensorName: str = "", sensorType: str = "", sensorLocation: str = "", sensorDescription: str = ""):
     """
-    This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
+    This function will be responsible for registering the sensor with the SensorDB and sending the sensorid to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorMetadata
-    sensorID = str(uuid.uuid4())
-    if sensorID == "" or sensorType == "" or sensorLocation == "" or sensorDescription == "":
+    sensorid = str(uuid.uuid4())
+    if sensorid == "" or sensorType == "" or sensorLocation == "" or sensorDescription == "":
         return {"Error": 400, "Message": "Parms not found"}
 
     sensor = {
-        "sensorID": sensorID,
+        "sensorid": sensorid,
         "sensorName": sensorName,
         "sensorType": sensorType,
         "sensorLocation": sensorLocation,
         "sensorDescription": sensorDescription,
     }
     collection.insert_one(sensor)
-    return {"sensorID": sensorID}
+    return {"sensorid": sensorid}
 
 
 # bind api to retrive sensor ID from any or all of the sensor metadata
@@ -165,7 +165,7 @@ async def bind(
     sensorName: str = None, sensorType: str = None, sensorLocation: str = None, sensorDescription: str = None
 ):
     """
-    This function will be responsible for binding the sensor with the SensorDB and sending the sensorID to the ReqstManager.
+    This function will be responsible for binding the sensor with the SensorDB and sending the sensorid to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
@@ -184,18 +184,18 @@ async def bind(
     sensor = collection.find_one(sensor)
     if sensor is None:
         return {"error": "No sensor found"}
-    return {"sensorID": sensor["sensorID"]}
+    return {"sensorid": sensor["sensorid"]}
 
 
 @app.delete("/deregister")
-async def deregister(sensorID: str = ""):
+async def deregister(sensorid: str = ""):
     """
     This function will be responsible for deregistering the sensor with the SensorDB and sending the status code to the ReqstManager.
     """
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorMetadata
-    sensor = {"sensorID": sensorID}
+    sensor = {"sensorid": sensorid}
     collection.delete_one(sensor)
     return {"status": "success"}
 
