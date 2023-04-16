@@ -9,7 +9,8 @@ from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
 from pymongo import MongoClient
 
-Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
+Headers = {"X-M2M-Origin": "admin:admin",
+           "Content-Type": "application/json;ty=4"}
 
 mongoKey = config("mongoKey")
 fetchAPI = config("Om2mFetchAPI")
@@ -22,7 +23,8 @@ app = FastAPI()
 logger = logging.getLogger("my_logger")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler("sensor_logger.log")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -57,7 +59,8 @@ async def fetchSensors():
     cursor = collection.find({}, {"_id": 0})
     documents = list(cursor)
     client.close()
-    return {"data" : documents}
+    return {"data": documents}
+
 
 @app.get("/fetch")
 async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int = 1, startTime: int = None, endTime: int = None):
@@ -77,13 +80,9 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
             return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
         # using objectID to find
         data = collection.find({"sensorID": sensorID})
-<<<<<<< HEAD:Sensor Manager/apiEndpoints.py
-        # print(data.explain())
-=======
         # print(data)
         if data == None:
             return {"data": []}
->>>>>>> 26bdca408bd86626dcfda22337f81d48393cb092:sensor-manager/apiEndpoints.py
         timeSeriesData = []
         for cur in data:
             # print(cur)
@@ -96,36 +95,25 @@ async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int =
                     timeSeriesData.append(d)
 
         return {"data": timeSeriesData}
-<<<<<<< HEAD:Sensor Manager/apiEndpoints.py
-    elif fetchType == "realtime":
+    elif fetchType == "instant":
         realTimeData = []
         if collection.count_documents({"sensorID": sensorID}) == 0:
             return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
-        while (duration):
-
-            data = collection.find({"sensorID": sensorID})
-            # print(data)
-            # check if data is empty
-            # check if cursor returned points to a valid document
-
-=======
-    elif fetchType == "Instant":
-        realTimeData = []
         data = collection.find({"sensorID": sensorID})
+
         if data == None:
             return {"data": []}
         else:
             realTimeData = data[0]["data"][-1]
 
         return {"data": realTimeData}
-    elif fetchType == "RealTime":
+    elif fetchType == "realtime":
         realTimeData = []
         while duration:
             data = collection.find({"sensorID": sensorID})
             # print(data)
             if data == None:
                 return {"data": []}
->>>>>>> 26bdca408bd86626dcfda22337f81d48393cb092:sensor-manager/apiEndpoints.py
             for cur in data:
                 cur = cur["data"][-1]
                 # timestamp = int(cur[1:-1].split(",")[0])
