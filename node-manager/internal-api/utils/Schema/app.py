@@ -1,20 +1,30 @@
-from typing import List
+from enum import Enum
+from pydantic import BaseModel
 
-from bson import ObjectId
+
+class SensorType(str, Enum):
+    AQ = "AQ"
+    WMWD = "WM-WD"
+    WMWF = "WM-WF"
+    WE = "WE"
+    SROC = "SR-OC"
+    SREM = "SR-EM"
+    SRAQ = "SR-AQ"
+    SRAC = "SR-A"
+    CM = "CM"
+    SL = "SL"
+    EM = "EM"
+    WN = "WN"
 
 
-# Define App model
-class App:
-    def __init__(self, name: str, ip: str, port: int, users: List[ObjectId]):
-        self.name = name
-        self.ip = ip
-        self.port = port
-        self.users = users
+class User(BaseModel):
+    name: str
+    port: int
+    ip: str
+    active: bool
+    user: str
+    sensor_types: List[SensorType]
+    binded_sensors: List[str]
 
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "ip": self.ip,
-            "port": self.port,
-            "users": self.users,
-        }
+    class Config:
+        orm_mode = True

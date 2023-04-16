@@ -73,6 +73,11 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())]):
     return {"status": 200, "data": apps}
 
 
+@router.post("/register", dependencies=[Depends(JWTBearer())])
+async def register_new_app(token: Annotated[str, Depends(JWTBearer())]):
+    curr_user = decodeJWT(token)
+
+
 @router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
