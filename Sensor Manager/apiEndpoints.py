@@ -53,24 +53,27 @@ logger.addHandler(handler)
 
 
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, startTime: int = None, endTime: int = None):
+async def fetch(sensorID: str = "", fetchType: str = "realtime", duration: int = 1, startTime: int = None, endTime: int = None):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
     1.TimeSeries Data
     2.RealTime Stream
     """
+    fetchType = fetchType.lower()
     client = MongoClient(mongoKey)
     db = client.SensorDB
     collection = db.SensorData
     # find all data in DB
-    if fetchType == "TimeSeries":
+    if fetchType == "timeseries":
+        if collection.count_documents({"sensorID": sensorID}) == 0:
+            return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
+        # using objectID to find
         data = collection.find({"sensorID": sensorID})
-        print(data)
-        if data == None:
-            return {"data": []}
+        # print(data.explain())
         timeSeriesData = []
         for cur in data:
+            # print(cur)
             cur = cur["data"]
             for d in cur:
                 # d =  "[1680961091, 1, 117]"  sample
@@ -80,13 +83,17 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
                     timeSeriesData.append(d)
 
         return {"data": timeSeriesData}
-    elif fetchType == "RealTime":
+    elif fetchType == "realtime":
         realTimeData = []
+        if collection.count_documents({"sensorID": sensorID}) == 0:
+            return {"Error": 400, "Message": "Invalid SensorID/No Data Found"}
         while (duration):
+
             data = collection.find({"sensorID": sensorID})
-            print(data)
-            if data == None:
-                return {"data": []}
+            # print(data)
+            # check if data is empty
+            # check if cursor returned points to a valid document
+
             for cur in data:
                 cur = cur["data"][-1]
                 # timestamp = int(cur[1:-1].split(",")[0])
