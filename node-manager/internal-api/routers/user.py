@@ -56,10 +56,10 @@ def create_user(user: User = Body(...)):
     collection = db.User
     collection.create_index("email", unique=True)
     try:
-        print(user.password)
         user.password = get_password_hash(user.password)
         result = collection.insert_one(user.dict())
-        return {"status_code": 200, "token": signJWT(str(result.inserted_id), user.name, user.role, user.email)}
+        payload = {"id": str(result.inserted_id), "name": user.name, "role": user.role, "email": user.email}
+        return {"status_code": 200, "token": signJWT(payload)}
     except DuplicateKeyError:
         return {"message": "User with this email already exists.", "status_code": 400}
 

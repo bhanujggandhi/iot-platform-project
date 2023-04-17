@@ -5,12 +5,14 @@ from typing import Annotated
 import requests
 from bson import ObjectId
 from decouple import config
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path
 from fastapi.responses import HTMLResponse
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 from utils.jwt_bearer import JWTBearer
-from utils.jwt_handler import decodeJWT
+from utils.jwt_handler import decodeJWT, signJWT
 from utils.Messenger import Produce
+from utils.Schema.app import AppRegister
 
 sys.path.append("..")
 
@@ -74,8 +76,34 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())]):
 
 
 @router.post("/register", dependencies=[Depends(JWTBearer())])
-async def register_new_app(token: Annotated[str, Depends(JWTBearer())]):
-    curr_user = decodeJWT(token)
+async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: AppRegister = Body(...)):
+    try:
+        curr_user = decodeJWT(token)
+
+        user_collection.find_one({"_id": ObjectId(curr_user["id"])})
+
+        app_collection.create_index("name", unique=True)
+
+        result = app_collection.insert_one(
+            {
+                "name": app.name,
+                "user": ObjectId(curr_user["id"]),
+                "sensor_types": app.sensor_types,
+                "binded_sensors": app.binded_sensors,
+                "active": False,
+                "ip": "",
+                "port": -1,
+            }
+        )
+
+        payload = {"id": str(result.inserted_id), "user": curr_user["id"]}
+
+        return {
+            "status_code": 200,
+            "token": signJWT(payload),
+        }
+    except DuplicateKeyError:
+        return {"message": "App with this name already exists.", "status_code": 400}
 
 
 @router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])

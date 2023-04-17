@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import List, Optional
+
 from pydantic import BaseModel
 
 
@@ -17,12 +19,8 @@ class SensorType(str, Enum):
     WN = "WN"
 
 
-class User(BaseModel):
+class AppRegister(BaseModel):
     name: str
-    port: int
-    ip: str
-    active: bool
-    user: str
     sensor_types: List[SensorType]
     binded_sensors: List[str]
 
