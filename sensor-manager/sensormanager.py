@@ -11,6 +11,7 @@ from fastapi import APIRouter, FastAPI, Request, Depends
 from utils.jwt_bearer import JWTBearer
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from fastapi.middleware.cors import CORSMiddleware
 
 Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
 
@@ -21,6 +22,8 @@ JWT_SECRET = config("secret")
 JWT_ALGORITHM = config("algorithm")
 
 app = FastAPI()
+origins = ["*"]
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True,allow_methods=[""], allow_headers=[""])
 
 
 # -------Helper functions--------
@@ -33,13 +36,29 @@ def decodeJWT(token: str):
 
 
 # -------API endpoints--------
-@app.get("/fetchSensors")
-async def fetchSensors():
+@app.get("/fetchSensors", dependencies=[Depends(JWTBearer())])
+async def fetchSensors(token: Annotated[str, Depends(JWTBearer())]):
     """
     This function will return all the unique sensor types
     """
+
+    if token == "":
+        return {"status": 400, "data": "Invalid parms"}
+    
     try:
         client = MongoClient(mongoKey)
+        id = decodeJWT(token)['id']
+        db = client.platform
+        collection = db.User
+
+        user = collection.find_one({"_id": ObjectId(id)})
+        if user != None:
+            if user['role'] != 'developer':
+                return {"status": 400, "data": "Not authorized"}
+        else:
+            return {"status": 400, "data": "User not found"}
+
+
         db = client.SensorDB
         collection = db.SensorMetadata
         cursor = collection.find({}, {"_id": 0})
@@ -59,10 +78,13 @@ async def fetchSensors():
 
 
 @app.get("/fetchSensors/type", dependencies=[Depends(JWTBearer())])
-async def fetchSensorsbyType(token: Annotated[str, Depends(JWTBearer())], sensor_type : str):
+async def fetchSensorsbyType(token: Annotated[str, Depends(JWTBearer())], sensorType : str):
     """
     This function will return all the instances of a particular sensor type
     """
+    
+    if token == "" or sensorType == "":
+        return {"status": 400, "data": "Invalid parms"}
 
     try:
         client = MongoClient(mongoKey)
@@ -80,7 +102,7 @@ async def fetchSensorsbyType(token: Annotated[str, Depends(JWTBearer())], sensor
         
         db = client.SensorDB
         collection = db.SensorMetadata
-        cursor = collection.find({"sensorType" : sensor_type})
+        cursor = collection.find({"sensorType" : sensorType})
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
 
@@ -97,30 +119,33 @@ async def fetchSensorsbyType(token: Annotated[str, Depends(JWTBearer())], sensor
 
 
 @app.get("/fetch/TimeSeries", dependencies=[Depends(JWTBearer())])
-async def fetchTimeSeries(token: Annotated[str, Depends(JWTBearer())], sensorID: str, startTime: int, endTime: int):
+async def fetchTimeSeries(token: Annotated[str, Depends(JWTBearer())], sensorid: str, startTime: int, endTime: int):
     """
     This function will return data of a given sensor id from startTime till endTime
     """
 
-    # Do authorization, app id to sensor id
+    if token == "" or sensorid == "" or startTime == None or endTime == None:
+        return {"status": 400, "data": "Invalid parms"}
+
+    # Check whether app is authorized to access sensor : sensorid
     try:
         client = MongoClient(mongoKey)
         id = decodeJWT(token)['id']
         db = client.platform
-        collection = db.User
+        collection = db.App
 
-        user = collection.find_one({"_id": ObjectId(id)})
-        if user != None:
-            if user['role'] != 'developer':
+        _app = collection.find_one({"_id": ObjectId(id)})
+        if _app != None:
+            if sensorid not in _app['sensorId']:
                 return {"status": 400, "data": "Not authorized"}
         else:
-            return {"status": 400, "data": "User not found"}
+            return {"status": 400, "data": "App not found"}
 
 
         # Fetching timeseries sensor data
         db = client.SensorDB
         collection = db.SensorData
-        data = collection.find_one({"sensorid": sensorID})
+        data = collection.find_one({"sensorid": sensorid})
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
 
@@ -143,30 +168,33 @@ async def fetchTimeSeries(token: Annotated[str, Depends(JWTBearer())], sensorID:
     
 
 @app.get("/fetch/Instant", dependencies=[Depends(JWTBearer())])
-async def fetchInstant(token: Annotated[str, Depends(JWTBearer())], sensorID: str):
+async def fetchInstant(token: Annotated[str, Depends(JWTBearer())], sensorid: str):
     """
     This function will return last datapoint of a given sensor id
     """
 
-    # Do authorization, app id to sensor id
+    if token == "" or sensorid == "":
+        return {"status": 400, "data": "Invalid parms"}
+
+    # Check whether app is authorized to access sensor : sensorid
     try:
         client = MongoClient(mongoKey)
         id = decodeJWT(token)['id']
         db = client.platform
-        collection = db.User
+        collection = db.App
 
-        user = collection.find_one({"_id": ObjectId(id)})
-        if user != None:
-            if user['role'] != 'developer':
+        _app = collection.find_one({"_id": ObjectId(id)})
+        if _app != None:
+            if sensorid not in _app['sensorId']:
                 return {"status": 400, "data": "Not authorized"}
         else:
-            return {"status": 400, "data": "User not found"}
+            return {"status": 400, "data": "App not found"}
     
 
         # Fetching latest instance of sensor data
         db = client.SensorDB
         collection = db.SensorData
-        data = collection.find_one({"sensorid": sensorID})
+        data = collection.find_one({"sensorid": sensorid})
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
 
@@ -183,30 +211,33 @@ async def fetchInstant(token: Annotated[str, Depends(JWTBearer())], sensorID: st
     
 
 @app.get("/fetch/RealTime", dependencies=[Depends(JWTBearer())])
-async def fetchRealTime(token: Annotated[str, Depends(JWTBearer())], sensorID: str, duration: int = 1):
+async def fetchRealTime(token: Annotated[str, Depends(JWTBearer())], sensorid: str, duration: int = 1):
     """
     This function will return realtime data for a given sensor id for a specified duration
     """
 
-    # Do authorization, app id to sensor id
+    if token == "" or sensorid == "":
+        return {"status": 400, "data": "Invalid parms"}
+
+    # Check whether app is authorized to access sensor : sensorid
     try:
         client = MongoClient(mongoKey)
         id = decodeJWT(token)['id']
         db = client.platform
-        collection = db.User
+        collection = db.App
 
-        user = collection.find_one({"_id": ObjectId(id)})
-        if user != None:
-            if user['role'] != 'developer':
+        _app = collection.find_one({"_id": ObjectId(id)})
+        if _app != None:
+            if sensorid not in _app['sensorId']:
                 return {"status": 400, "data": "Not authorized"}
         else:
-            return {"status": 400, "data": "User not found"}
+            return {"status": 400, "data": "App not found"}
         
         
         # Fetching realtime sensor data
         db = client.SensorDB
         collection = db.SensorData
-        data = collection.find_one({"sensorid": sensorID})
+        data = collection.find_one({"sensorid": sensorid})
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
 
@@ -214,7 +245,7 @@ async def fetchRealTime(token: Annotated[str, Depends(JWTBearer())], sensorID: s
         realTimeData = []
 
         while(duration):
-            data = collection.find_one({"sensorid": sensorID})["data"]
+            data = collection.find_one({"sensorid": sensorid})["data"]
             realTimeData.append(data[-1])
             duration -= 1
             time.sleep(1)
@@ -231,7 +262,7 @@ async def fetchRealTime(token: Annotated[str, Depends(JWTBearer())], sensorID: s
 @app.post("/register", dependencies=[Depends(JWTBearer())])
 async def register(token: Annotated[str, Depends(JWTBearer())], sensorName: str, sensorType: str, sensorLocation: str, sensorDescription: str = ""):
     """
-    This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
+    This function will be responsible for registering the sensor with the SensorDB and sending the sensorid to the ReqstManager.
     """
 
     if sensorName == "" or sensorType == "" or sensorLocation == "":
@@ -255,29 +286,32 @@ async def register(token: Annotated[str, Depends(JWTBearer())], sensorName: str,
         client = MongoClient(mongoKey)
         db = client.SensorDB
         collection = db.SensorMetadata
-        sensorID = str(uuid.uuid4())
+        sensorid = str(uuid.uuid4())
     
         sensor = {
-            "sensorID": sensorID,
             "sensorName": sensorName,
             "sensorType": sensorType,
             "sensorLocation": sensorLocation,
             "sensorDescription": sensorDescription,
+            "sensorid": sensorid,
         }
 
+        if collection.find_one({"sensorName": sensorName}) != None:
+            return {"status": 400, "data": "Sensor name already exists"}
+
         collection.insert_one(sensor)
-        return {"status": 200, "data": sensorID}
+        return {"status": 200, "data": sensorid}
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
 
 
 @app.delete("/deregister", dependencies=[Depends(JWTBearer())])
-async def deregister(token: Annotated[str, Depends(JWTBearer())], sensorID: str):
+async def deregister(token: Annotated[str, Depends(JWTBearer())], sensorid: str):
     """
     This function will be responsible for deregistering the sensor with the SensorDB and sending the status code to the ReqstManager.
     """
 
-    if sensorID == "":
+    if sensorid == "":
         return {"status": 400, "data": "Invalid parms"}
     
     # Do authorization, role must be platform
@@ -297,13 +331,13 @@ async def deregister(token: Annotated[str, Depends(JWTBearer())], sensorID: str)
         client = MongoClient(mongoKey)
         db = client.SensorDB
         collection = db.SensorMetadata
-        data = collection.find_one({"sensorid": sensorID})        
+        data = collection.find_one({"sensorid": sensorid})        
     except:
         return {"status": 400, "data": "Unable to connect to MongoDB"}
     
     if data != None:
         try:
-            sensor = {"sensorid": sensorID}
+            sensor = {"sensorid": sensorid}
             collection.delete_one(sensor)
             return {"status": 200, "data": "success"}
         except:
