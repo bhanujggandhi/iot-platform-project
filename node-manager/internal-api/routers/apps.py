@@ -50,7 +50,14 @@ def populate_user(app):
 
 def apps_helper_read(app) -> dict:
     app = populate_user(app)
-    return {"id": str(app["_id"]), "name": app["name"], "user": str(app["user"]), "ip": app["ip"], "port": app["port"]}
+    return {
+        "id": str(app["_id"]),
+        "name": app["name"],
+        "user": str(app["user"]),
+        "ip": app["ip"],
+        "port": app["port"],
+        "active": app["active"],
+    }
 
 
 # ===================================
@@ -96,7 +103,7 @@ async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: App
             }
         )
 
-        payload = {"id": str(result.inserted_id), "user": curr_user["id"]}
+        payload = {"id": str(result.inserted_id), "user": curr_user["id"], "token": "app"}
 
         return {
             "status_code": 200,

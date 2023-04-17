@@ -58,7 +58,13 @@ def create_user(user: User = Body(...)):
     try:
         user.password = get_password_hash(user.password)
         result = collection.insert_one(user.dict())
-        payload = {"id": str(result.inserted_id), "name": user.name, "role": user.role, "email": user.email}
+        payload = {
+            "id": str(result.inserted_id),
+            "name": user.name,
+            "role": user.role,
+            "email": user.email,
+            "token": "user",
+        }
         return {"status_code": 200, "token": signJWT(payload)}
     except DuplicateKeyError:
         return {"message": "User with this email already exists.", "status_code": 400}
@@ -74,7 +80,14 @@ def user_login(user: UserLogin = Body(...)):
         password = verify_password(user.password.encode("utf-8"), found_user["password"])
         if not password:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
-        return signJWT(str(found_user["_id"]), found_user["name"], found_user["role"], found_user["email"])
+        payload = {
+            "id": str(found_user["_id"]),
+            "name": found_user["name"],
+            "role": found_user["role"],
+            "email": found_user["email"],
+            "token": "user",
+        }
+        return signJWT(payload)
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
 

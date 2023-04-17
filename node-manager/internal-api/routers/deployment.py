@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 from typing import Annotated
+from bson import ObjectId
 
 import requests
 import uvicorn
@@ -56,6 +57,21 @@ async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: Upl
     """
     curr_user = decodeJWT(token)
 
+    try:
+        if curr_user["token"] != "user":
+            return {"status": 403, "msg": "You are not allowed to perform this action"}
+    except:
+        return {"status": 403, "msg": "You are not allowed to perform this action"}
+
+    app_collection = db.App
+    fname = file.filename.split(".")[0]
+
+    exist = app_collection.find_one({"user": ObjectId(curr_user["id"]), "name": fname})
+    print(exist)
+
+    if not exist:
+        return {"status": 404, "msg": "App not found, create one!"}
+
     # Check filetype
     if file.content_type != "application/zip":
         raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
@@ -92,7 +108,8 @@ async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: Upl
             "service": "",
             "app": fname,
             "operation": "deploy",
-            "id": curr_user["id"],
+            "appid": str(exist["_id"]),
+            "userid": curr_user["id"],
             "src": "topic_internal_api",
         }
         produce.push("topic_node_manager", "", json.dumps(message))

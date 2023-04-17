@@ -92,54 +92,56 @@ class Consume:
 # =============================================
 
 
-def deploy_app(appid: str, userid: str):
+def deploy_app(appname: str, appid: str, userid: str):
     collection = db.App
     collection.create_index("name", unique=True)
     user_collection = db.User
+    app_collection = db.App
+    curr_app = app_collection.find_one({"_id": ObjectId(appid), "user": ObjectId(userid)})
     curr_user = user_collection.find_one({"_id": ObjectId(userid)})
 
-    if not curr_user:
+    if not curr_app:
+        message = {"status": 404, "msg": "Could not find the app"}
         produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
 
-        return {"success": "False", "err": "We were unable to deploy the app"}
+        return {"success": 404, "err": "App does not found"}
 
     ip = get_ip()
 
-    status = downloadFile("apps", f"{appid}.zip", ".")
+    status = downloadFile("apps", f"{appname}.zip", ".")
 
-    with zipfile.ZipFile(f"{appid}.zip", "r") as zip_ref:
+    with zipfile.ZipFile(f"{appname}.zip", "r") as zip_ref:
         zip_ref.extractall(".")
 
-    cmd = f"docker stop {appid} && docker rm {appid}"
+    cmd = f"docker stop {appname} && docker rm {appname}"
     os.system(cmd)
-    cmd = f"docker rmi {appid}"
+    cmd = f"docker rmi {appname}"
     os.system(cmd)
-    generate_docker_image(appid)
-    cmd = f"docker build -t {appid} {appid}"
+    generate_docker_image(appname)
+    cmd = f"docker build -t {appname} {appname}"
     os.system(cmd)
     assign_port = get_free_port()
-    cmd = f"docker run --name {appid} -d -p {assign_port}:80 {appid}"
+    cmd = f"docker run --name {appname} -d -p {assign_port}:80 {appname}"
     os.system(cmd)
 
-    data = {"name": appid, "port": assign_port, "ip": ip, "active": True, "user": str(ObjectId(userid))}
+    data = {"active": True, "port": assign_port, "ip": ip}
 
-    collection.find_one_and_delete({"name": appid})
-    collection.insert_one(data)
+    collection.find_one_and_update({"name": appname}, {"$set": data})
 
     message = {
         "receiver_email": curr_user["email"],
-        "subject": f"{appid} Deployed",
+        "subject": f"{appname} Deployed",
         "body": f"Hello Developer,\nWe have successfully deployed your app at http://{ip}:{assign_port}",
     }
 
     produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
-    os.system(f"rm -rf {appid}.zip")
-    os.system(f"rm -rf {appid}")
+    os.system(f"rm -rf {appname}.zip")
+    os.system(f"rm -rf {appname}")
 
     return {"success": "deployed", "port": f"{assign_port}", "ip": ip}
 
 
-def stop_app(appid: str, userid: str):
+def stop_app(appname: str, appid: str, userid: str):
     collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
@@ -151,7 +153,7 @@ def stop_app(appid: str, userid: str):
     return data
 
 
-def start_app(appid: str, userid: str):
+def start_app(appname: str, appid: str, userid: str):
     collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
@@ -171,7 +173,7 @@ def start_app(appid: str, userid: str):
     return data
 
 
-def remove_app(appid: str, userid: str):
+def remove_app(appname: str, appid: str, userid: str):
     collection = db.App
     active = collection.find_one({"name": appid})
     if not active:
@@ -293,31 +295,40 @@ produce = Produce()
 
 def utilise_message(value):
     value = json.loads(value)
-    print(value)
-    src = value["src"]
-    if value["service"] == "" and value["app"] == "":
+    try:
+        src = value["src"]
+        service = value["service"]
+        appname = value["app"]
+        operation = value["operation"]
+        appid = value["appid"]
+        userid = value["userid"]
+    except:
+        message = {"status": "False", "msg": "Message format is not correct"}
+        produce.push(src, TOPIC, json.dumps(message))
+
+    if service == "" and appname == "":
         message = {"status": "False", "msg": "No valid service or app provided"}
         produce.push(src, TOPIC, json.dumps(message))
-    if value["service"] != "":
-        if value["operation"] not in service_func.keys():
-            message = {"status": "False", "msg": f"No valid operation provided for the {value['service']}"}
+    if service != "":
+        if operation not in service_func.keys():
+            message = {"status": "False", "msg": f"No valid operation provided for the {service}"}
             produce.push(src, TOPIC, json.dumps(message))
         else:
-            if value["operation"] == "init":
-                res = service_func[value["operation"]]()
+            if operation == "init":
+                res = service_func[operation]()
             else:
-                res = service_func[value["operation"]](value["service"])
+                res = service_func[operation](service)
                 print(res)
             message = {"status": "True", "msg": res}
             produce.push(src, TOPIC, json.dumps(message))
-    if value["app"] != "":
-        if value["operation"] not in app_func.keys():
-            message = {"status": "False", "msg": f"No valid operation provided for the {value['app']}"}
+    if appname != "":
+        if operation not in app_func.keys():
+            message = {"status": "False", "msg": f"No valid operation provided for the {appname}"}
             produce.push(src, TOPIC, json.dumps(message))
             print(message)
         else:
             print(value)
-            res = app_func[value["operation"]](value["app"], value["id"])
+            res = app_func[operation](appname, appid, userid)
             try:
                 message = json.dumps({"status": "True", "msg": res})
             except:
@@ -332,7 +343,8 @@ Expected json from producer of topic topic_node_manager
     "service": "",
     "app": "",
     "operation": "",
-    "id":"",
+    "appid":"",
+    "userid":"",
     "src":""
 }
 
