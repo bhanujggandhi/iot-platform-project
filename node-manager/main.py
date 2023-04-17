@@ -143,46 +143,43 @@ def deploy_app(appname: str, appid: str, userid: str):
 
 def stop_app(appname: str, appid: str, userid: str):
     collection = db.App
-    active = collection.find_one({"name": appid})
+    active = collection.find_one({"_id": ObjectId(appid), "user": ObjectId(userid)})
+
     if not active:
-        return {"status": "False", "msg": "App is not deployed!"}
-    cmd = f"docker stop {appid}"
+        return {"status": 404, "msg": "Could not find the app"}
+    cmd = f"docker stop {appname}"
     os.system(cmd)
     data = {"active": False}
-    collection.find_one_and_update({"name": service}, {"$set": data})
+    collection.find_one_and_update({"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data})
     return data
 
 
 def start_app(appname: str, appid: str, userid: str):
     collection = db.App
-    active = collection.find_one({"name": appid})
+    active = collection.find_one({"_id": ObjectId(appid), "user": ObjectId(userid)})
+
     if not active:
-        return {"status": "False", "msg": "App is not deployed!"}
-    cmd = f"docker stop {appid}"
+        return {"status": 404, "msg": "Could not find the app"}
+
+    cmd = f"docker start {appname}"
     os.system(cmd)
-    cmd = f"docker rmi {appid}"
-    os.system(cmd)
-    generate_docker_image(appid)
-    cmd = f"docker build -t {appid} {appid}"
-    os.system(cmd)
-    assign_port = get_free_port()
-    cmd = f"docker run --name {appid} -d --rm -p {assign_port}:80 {appid}"
-    os.system(cmd)
-    data = {"name": service, "port": assign_port, "ip": ip, "active": True}
-    collection.find_one_and_update({"name": service}, {"$set": data})
+    data = {"active": True}
+    collection.find_one_and_update({"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data})
     return data
 
 
 def remove_app(appname: str, appid: str, userid: str):
     collection = db.App
-    active = collection.find_one({"name": appid})
+    active = collection.find_one({"_id": ObjectId(appid), "user": ObjectId(userid)})
+
     if not active:
-        return {"status": "False", "msg": "App is not deployed!"}
-    cmd = f"docker stop {appid} && docker rm {appid}"
+        return {"status": 404, "msg": "Could not find the app"}
+
+    cmd = f"docker stop {appname} && docker rm {appname}"
     os.system(cmd)
-    cmd = f"docker rmi {appid}"
+    cmd = f"docker rmi {appname}"
     os.system(cmd)
-    collection.find_one_and_delete({"name": appid})
+    collection.find_one_and_delete({"name": appname})
     return {"status": "True", "msg": "App removed"}
 
 

@@ -116,46 +116,68 @@ async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: App
 @router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appid})
+    curr_app = app_collection.find_one({"name": appid, "user": ObjectId(curr_user["id"])})
     if not curr_app:
         return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
 
-    if str(curr_app["_id"]) != curr_user["id"]:
+    if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}
-
-    message = {"service": "", "app": appid, "operation": "stop", "id": curr_user["id"], "src": "topic_internal_api"}
+    message = {
+        "service": "",
+        "app": appid,
+        "operation": "stop",
+        "appid": str(curr_app["_id"]),
+        "userid": curr_user["id"],
+        "src": "topic_internal_api",
+    }
     produce.push("topic_node_manager", "", json.dumps(message))
 
     return {"status": 200, "data": "We have stopped your app successfully"}
 
 
 @router.post("/{appid}/start", dependencies=[Depends(JWTBearer())])
-async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
+async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appid})
+    curr_app = app_collection.find_one({"name": appname, "user": ObjectId(curr_user["id"])})
     if not curr_app:
-        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+        return {"status": 404, "data": f"We have no app deployed in the name of {appname}"}
 
-    if str(curr_app["_id"]) != curr_user["id"]:
+    if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}
 
-    message = {"service": "", "app": appid, "operation": "start", "id": curr_user["id"], "src": "topic_internal_api"}
+    message = {
+        "service": "",
+        "app": appname,
+        "operation": "start",
+        "appid": str(curr_app["_id"]),
+        "userid": curr_user["id"],
+        "src": "topic_internal_api",
+    }
+
     produce.push("topic_node_manager", "", json.dumps(message))
 
     return {"status": 200, "data": "We have started your app successfully"}
 
 
 @router.post("/{appid}/remove", dependencies=[Depends(JWTBearer())])
-async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
+async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appid})
+    curr_app = app_collection.find_one({"name": appname, "user": ObjectId(curr_user["id"])})
     if not curr_app:
-        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+        return {"status": 404, "data": f"We have no app deployed in the name of {appname}"}
 
-    if str(curr_app["_id"]) != curr_user["id"]:
+    if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}
 
-    message = {"service": "", "app": appid, "operation": "remove", "id": curr_user["id"], "src": "topic_internal_api"}
+    message = {
+        "service": "",
+        "app": appname,
+        "operation": "remove",
+        "appid": str(curr_app["_id"]),
+        "userid": curr_user["id"],
+        "src": "topic_internal_api",
+    }
+
     produce.push("topic_node_manager", "", json.dumps(message))
 
     return {"status": 200, "data": "We have removed your app successfully"}
