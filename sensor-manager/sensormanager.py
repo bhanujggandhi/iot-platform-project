@@ -22,6 +22,8 @@ JWT_ALGORITHM = config("algorithm")
 
 app = FastAPI()
 
+
+# -------Helper functions--------
 def decodeJWT(token: str):
     try:
         decode_token = jwt.decode(token, JWT_SECRET, algorithms=JWT_ALGORITHM)
@@ -30,6 +32,7 @@ def decodeJWT(token: str):
         return {}
 
 
+# -------API endpoints--------
 @app.get("/fetchSensors")
 async def fetchSensors():
     """
