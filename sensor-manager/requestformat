@@ -8,5 +8,5 @@ Expected response from kafka
         value['startTime'] : START_TIME,
         value['endTime'] : END_TIME,
         value['duration'] : DURATION
-    
     }
+

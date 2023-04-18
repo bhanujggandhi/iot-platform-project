@@ -1,4 +1,8 @@
 # (DB:ActiveNodeDB , collection:activeNodeCollection)
+# from decoupl
+from pymongo import MongoClient
+import pymongo
+from decouple import config
 ActiveNodeSchema = {
     "$jsonSchema": {
         "bsonType": "object",
@@ -24,17 +28,9 @@ userCollectionSchema = {
         "required": ["name", "role", "email", "password"],
         "properties": {
             "name": {"bsonType": "string", "description": "must be a string and is required"},
-            "role": {
-                "enum": ["AppAdmin", "AppDeveloper", "PlatformAdmin"],
-                "description": "can only be one of the enum values and is required",
-            },
+            "role": {"bsonType": "string", "description": "must be a string and is required"},
             "email": {"bsonType": "string", "description": "must be a string and is required"},
             "password": {"bsonType": "string", "description": "must be a string and is required"},
-            "appids": {
-                "bsonType": "array",
-                "description": "must be an array and is required",
-                "items": {"bsonType": "string", "description": "must be a string if the field is present"},
-            },
         },
     }
 }
@@ -98,6 +94,24 @@ TrafficCollectionSchema = {
                 "Status": {"bsonType": "int"},
                 "StartTime": {"bsonType": "timestamp"},
                 "EndTime": {"bsonType": "timestamp"},
+            },
+        }
+    }
+}
+
+
+# (DB:platform , collection:Module_Status)
+
+Module_StatusSchema = {
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "title": "Student Object Validation",
+            "required": ["module_name", "status", "last_updated"],
+            "properties": {
+                "module_name": {"bsonType": "string"},
+                "status": {"bsonType": "string"},
+                "last_updated": {"bsonType": "date"},
             },
         }
     }
