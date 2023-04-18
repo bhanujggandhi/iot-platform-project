@@ -1,0 +1,17 @@
+{
+  "kafka_producer_config": {
+    "bootstrap.servers": "pkc-41p56.asia-south1.gcp.confluent.cloud:9092",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanisms": "PLAIN",
+    "sasl.username": "NHBIPVRIJJLKMWNW",
+    "sasl.password": "zEAyw6WE+5iKhypjIULJZSAG2V86EtF63iGcNDbyWzHirS1ejryBeTdjjuVaHkww"
+  },
+  "kafka_consumer_config": {
+    "bootstrap.servers": "pkc-41p56.asia-south1.gcp.confluent.cloud:9092",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanisms": "PLAIN",
+    "sasl.username": "NHBIPVRIJJLKMWNW",
+    "sasl.password": "zEAyw6WE+5iKhypjIULJZSAG2V86EtF63iGcNDbyWzHirS1ejryBeTdjjuVaHkww",
+    "auto.offset.reset": "earliest"
+  }
+}
