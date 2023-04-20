@@ -3,3 +3,4 @@ azure.storage.blob
 python-decouple
 uvicorn
 httptools==0.1.*
+jsonschema

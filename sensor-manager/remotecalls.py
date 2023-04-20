@@ -1,4 +1,3 @@
-
 import requests
 from decouple import config
 from pymongo import MongoClient
@@ -17,7 +16,7 @@ def fetchdatahelper(sensorIDs, startTime):
     data = {}
     print("Fetching data for ", sensorIDs, " from ", startTime)
     for i in sensorIDs:
-        res = requests.get(dataFetchAPI+i+"/feeds?start="+startTime)
+        res = requests.get(dataFetchAPI + i + "/feeds?start=" + startTime)
         if res.status_code == 200:
             res = res.json()
             data[i] = res["feeds"]
@@ -36,7 +35,7 @@ def fetchdata(parms):
         long = parms["long"]
         db = client["SensorDB"]
         collection = db["LatLongtoSensorID"]
-        res = collection.find_one({"location": lat+","+long})
+        res = collection.find_one({"location": lat + "," + long})
         if res:
             sensorIDs = res["sensorIDs"]
 
@@ -68,7 +67,7 @@ def main():
         "starttime": "2023-01-14T08:26:20Z",
         "numofsensors": 10,
         "lat": "17.445402",
-        "long": "78.349875"
+        "long": "78.349875",
     }
     data = fetchdata(parms)
     print(data)

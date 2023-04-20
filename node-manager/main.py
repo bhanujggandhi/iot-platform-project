@@ -275,7 +275,7 @@ def start_node(service: str):
     cmd = f"docker build -t {service} {service}"
     os.system(cmd)
     assign_port = get_free_port()
-    cmd = f"docker run --name {service} -d --rm -p {assign_port}:80 {service}"
+    cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
     os.system(cmd)
     data = {"name": service, "port": assign_port, "ip": ip, "active": True}
     collection.find_one_and_update({"name": service}, {"$set": data})
