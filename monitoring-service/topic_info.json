@@ -5,7 +5,8 @@
   "Node Manager": {
     "topic_name": "topic_node_manager"
   },
-  "Monitoring Service": {
-    "topic_name": "topic_monitoring"
+  "Notification Manager": {
+    "topic_name": "topic_notification"
   }
+
 }

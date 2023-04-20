@@ -7,9 +7,10 @@ MONITORING SERVICE:
     INFORMATION
     Module Names : Sensor Manager, Node Manager, Monitoring Service.
 
-    * MESSAGE format to sent : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health", "module": "my_module"}}
+    * MESSAGE format to sent  : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health", "module": "my_module"}}
     * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time() ,"module": "my_module"} }
-    * API format for modules which doen't use Kafka : /ping/{module_name}
+    * MESSAGE format for API(module w/o kafka) health check : /ping/{module_name}
+    * MESSAGE format for APP health check : {"name": "<app_name>", "data": {"timestamp": time.time()}}
 """
 import json
 import threading
@@ -20,8 +21,8 @@ from decouple import config
 from Messenger import Consume, Produce
 from pymongo import MongoClient
 
-PRODUCER_SLEEP_TIME = 3
-CONSUMER_SLEEP_TIME = 1
+PRODUCER_SLEEP_TIME = 4
+CONSUMER_SLEEP_TIME = 2
 API_SLEEP_TIME = 5
 MAIN_SLEEP_TIME = 1
 TRACKING_INTERVAL = 10
@@ -29,17 +30,17 @@ TIMEOUT_THRESHOLD = 30
 IP = "127.0.0.1"
 PORT = "8000"
 MY_TOPIC = "topic_monitoring"
-MODULE_LIST = []
-API_MODULE_LIST = []
+MODULE_LIST = []    # modules which uses kafka
+API_MODULE_LIST = []    # modules which are not using kafka
 CONFIG_FILE_PATH = "./topic_info.json"
-
+SERVICES = []
 # Establish connection to MongoDB
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
 db = client["platform"]
-collection = db["Module_status"]
-# app_collection = db["AppCollection"]
-
+collection = db["Module_Status"]
+app_collection = db["App"]
+app_status_collection = db["App_Status"]
 
 # Load topic info from configuration file
 def get_service_info(config_file):
@@ -63,17 +64,16 @@ def get_service_info(config_file):
 
 
 # Function to store module health status in MongoDB
-def store_health_status(module_name, timestamp):
+def store_health_status(module_name, timestamp, status):
     try:
         # Create a document with the module name and timestamp
         filter = {"module_name": module_name}
         # Define the update values
-        update = {"$set": {"status": "active", "last_updated": timestamp}}
+        update = {"$set": {"status": status, "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
             f"Error: {e}. Failed to store health status for module '{module_name}'")
-
 
 # Function to get last update timestamp of a specific module from MongoDB
 def get_last_update_timestamp(module_name):
@@ -90,6 +90,21 @@ def get_last_update_timestamp(module_name):
             f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
+# Function to store app health status in MongoDB
+def store_app_health_status(app_name, timestamp):
+    try:
+        # Create a document with the module name and timestamp
+        filter = {"name": app_name}
+        # Define the update values
+        update = {"$set": {"status": "active", "last_updated": timestamp}}
+        app_status_collection.update_one(filter, update, upsert=True)
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}'")
+
+# get list of all the active apps. 
+def getAppData():
+    return list(app_collection.find({"active": True}))
 
 # Function to update module status in MongoDB
 def updateStatus(module_name):
@@ -106,6 +121,29 @@ def updateStatus(module_name):
 
 # **********************************| Communication with Modules |***********************************
 
+def appHealthCheck():
+    """
+    Health check of Applications deployed on the platform which are currently active.
+    """
+    while True:
+        app_list = getAppData()
+
+        for app in app_list:
+            app_api_url = f"http://{app['ip']}:{app['port']}/ping"
+            try:
+                response_dict = requests.get(app_api_url).json()
+                timestamp = response_dict["data"]["time_stamp"]
+
+                # Store app health status in MongoDB
+                store_app_health_status(app["name"], timestamp)
+
+                return response_dict
+
+            except Exception as e:
+                print(e)
+                return dict()
+
+        time.sleep(API_SLEEP_TIME)
 
 def apiHealthCheck():
     """
@@ -135,8 +173,7 @@ def postHealthCheck():
     post health messages to all the module's
     """
     print("Post health check messages started... ")
-    services, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
-    # topic_names = [value["topic_name"] for value in services.values()]
+    # topic_names = [value["topic_name"] for value in SERVICES.values()]
 
     if not MODULE_LIST:
         print("Failed to get MODULE_LIST from configuration file. Aborting...")
@@ -147,7 +184,7 @@ def postHealthCheck():
         try:
             for Module in MODULE_LIST:
                 key = ""
-                topic_name = services[Module]["topic_name"]
+                topic_name = SERVICES[Module]["topic_name"]
 
                 # needs to decide what message format will be..
                 message = {"to": topic_name, "src": "topic_monitoring",
@@ -220,6 +257,7 @@ def timeOutTracker():
                         # Take action and send notification to admin
                         print(
                             f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
+                        store_health_status(module_name, last_update_timestamp, "inactive")
                         updateStatus(module_name)
                         """
                         TO DO : some more action when required
