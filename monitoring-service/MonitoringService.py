@@ -1,16 +1,14 @@
 """
 MONITORING SERVICE:
-    * Gets initalized with a config file describing:
-        - The rules for determining threshold
-
     Assumes:
     * Node Manager is always up
     * API Manager is up when traffic data is asked
 
     INFORMATION
+    Module Names : Sensor Manager, Node Manager, Monitoring Service.
 
-    * MESSAGE format to sent : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health"}}
-    * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time()} }
+    * MESSAGE format to sent : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health", "module": "my_module"}}
+    * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time() ,"module": "my_module"} }
     * API format for modules which doen't use Kafka : /ping/{module_name}
 """
 import json
@@ -56,7 +54,8 @@ def get_service_info(config_file):
         print(f"Configuration file not found: {config_file}")
         return {}, []
     except json.JSONDecodeError as e:
-        print(f"Failed to decode configuration file: {config_file}. Error: {e}")
+        print(
+            f"Failed to decode configuration file: {config_file}. Error: {e}")
         return {}, []
 
 
@@ -72,7 +71,8 @@ def store_health_status(module_name, timestamp):
         update = {"$set": {"status": "active", "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to store health status for module '{module_name}'")
+        print(
+            f"Error: {e}. Failed to store health status for module '{module_name}'")
 
 
 # Function to get last update timestamp of a specific module from MongoDB
@@ -86,7 +86,8 @@ def get_last_update_timestamp(module_name):
         else:
             return None
     except Exception as e:
-        print(f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
+        print(
+            f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
 
@@ -99,7 +100,8 @@ def updateStatus(module_name):
         update = {"$set": {"status": "inactive"}}
         # app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to update status for module '{module_name}'")
+        print(
+            f"Error: {e}. Failed to update status for module '{module_name}'")
 
 
 # **********************************| Communication with Modules |***********************************
@@ -107,7 +109,7 @@ def updateStatus(module_name):
 
 def apiHealthCheck():
     """
-    Health check of modules, which does not use Kafka, through API
+    Health check of modules which does not use Kafka, through API
     """
     while True:
         for module_name in API_MODULE_LIST:
@@ -148,7 +150,8 @@ def postHealthCheck():
                 topic_name = services[Module]["topic_name"]
 
                 # needs to decide what message format will be..
-                message = {"receiver_module": Module, "sender_module": "Moniotring service", "remark": "Healthcheck"}
+                message = {"to": topic_name, "src": "topic_monitoring",
+                           "data": {"operation": "health", "module": Module}}
                 produce.push(topic_name, key, json.dumps(message))
         except KeyError as e:
             print(f"KeyError: {e}. Failed to post health check message.")
@@ -176,15 +179,16 @@ def getHealthStatus():
                 # print(resp["key"], resp["value"])
                 value = json.loads(resp["value"])
                 # Extract module name and timestamp from the message
-                module_name = value.get("sender_module")
-                timestamp = value.get("time_stamp")
+                module_name = value['data']['module']
+                timestamp = value['data']['timestamp']
 
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
                     store_health_status(module_name, float(timestamp))
                 else:
-                    print("Error: Required fields are missing in the health status message.")
+                    print(
+                        "Error: Required fields are missing in the health status message.")
         except KeyError as e:
             print(f"Error: {e}. Failed to get health status.")
         except Exception as e:
@@ -209,17 +213,20 @@ def timeOutTracker():
             # Iterate through the list of modules
             for module_name in MODULE_LIST:
                 try:
-                    last_update_timestamp = get_last_update_timestamp(module_name)
+                    last_update_timestamp = get_last_update_timestamp(
+                        module_name)
 
                     if last_update_timestamp and (current_timestamp - last_update_timestamp) > TIMEOUT_THRESHOLD:
                         # Take action and send notification to admin
-                        print(f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
+                        print(
+                            f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
                         updateStatus(module_name)
                         """
                         TO DO : some more action when required
                         """
                 except Exception as e:
-                    print(f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
+                    print(
+                        f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
                     # Continue to the next module in case of any error
                     continue
 
@@ -232,6 +239,7 @@ def timeOutTracker():
 
 
 if __name__ == "__main__":
+    print("Monitoring System Started....")
     # Create a producer to send healthcheck request at regular intervals and update the timeout queue
     producer_thread = threading.Thread(target=postHealthCheck, args=())
 
