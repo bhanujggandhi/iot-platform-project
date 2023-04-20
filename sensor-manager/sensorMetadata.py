@@ -51,3 +51,6 @@ def populateMetadata():
                 {"location": i, "sensorIDs": LattoSensorIDmap[i]})
     else:
         print("Error while querying the sensorIDs")
+
+
+populateMetadata()
