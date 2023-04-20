@@ -18,8 +18,9 @@ import time
 
 import requests
 from decouple import config
-from Messenger import Consume, Produce
 from pymongo import MongoClient
+
+from Messenger import Consume, Produce
 
 PRODUCER_SLEEP_TIME = 4
 CONSUMER_SLEEP_TIME = 2
@@ -30,8 +31,8 @@ TIMEOUT_THRESHOLD = 30
 IP = "127.0.0.1"
 PORT = "8000"
 MY_TOPIC = "topic_monitoring"
-MODULE_LIST = []    # modules which uses kafka
-API_MODULE_LIST = []    # modules which are not using kafka
+MODULE_LIST = []  # modules which uses kafka
+API_MODULE_LIST = []  # modules which are not using kafka
 CONFIG_FILE_PATH = "./topic_info.json"
 SERVICES = []
 # Establish connection to MongoDB
@@ -41,6 +42,7 @@ db = client["platform"]
 collection = db["Module_Status"]
 app_collection = db["App"]
 app_status_collection = db["App_Status"]
+
 
 # Load topic info from configuration file
 def get_service_info(config_file):
@@ -75,6 +77,20 @@ def store_health_status(module_name, timestamp, status):
         print(
             f"Error: {e}. Failed to store health status for module '{module_name}'")
 
+
+# Function to store app health status in MongoDB
+def store_app_health_status(app_name, timestamp, status):
+    try:
+        # Create a document with the module name and timestamp
+        filter = {"name": app_name}
+        # Define the update values
+        update = {"$set": {"status": status, "last_updated": timestamp}}
+        app_status_collection.update_one(filter, update, upsert=True)
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}'")
+
+
 # Function to get last update timestamp of a specific module from MongoDB
 def get_last_update_timestamp(module_name):
     try:
@@ -90,33 +106,25 @@ def get_last_update_timestamp(module_name):
             f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
-# Function to store app health status in MongoDB
-def store_app_health_status(app_name, timestamp):
+
+def get_app_last_update_timestamp(app_name):
     try:
-        # Create a document with the module name and timestamp
-        filter = {"name": app_name}
-        # Define the update values
-        update = {"$set": {"status": "active", "last_updated": timestamp}}
-        app_status_collection.update_one(filter, update, upsert=True)
+        # Query MongoDB to get the latest document of the specific module based on module_name field
+        document = app_status_collection.find_one({"name": app_name})
+        # Extract and return the timestamp from the document
+        if document:
+            return document["last_updated"]
+        else:
+            return None
     except Exception as e:
         print(
-            f"Error: {e}. Failed to store health status for app '{app_name}'")
+            f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        return None
 
-# get list of all the active apps. 
+
+# get list of all the active apps.
 def getAppData():
     return list(app_collection.find({"active": True}))
-
-# Function to update module status in MongoDB
-def updateStatus(module_name):
-    try:
-        # Create a document with the module name and timestamp
-        filter = {"module_name": module_name}
-        # Define the update values
-        update = {"$set": {"status": "inactive"}}
-        # app_collection.update_one(filter, update, upsert=True)
-    except Exception as e:
-        print(
-            f"Error: {e}. Failed to update status for module '{module_name}'")
 
 
 # **********************************| Communication with Modules |***********************************
@@ -135,7 +143,7 @@ def appHealthCheck():
                 timestamp = response_dict["data"]["time_stamp"]
 
                 # Store app health status in MongoDB
-                store_app_health_status(app["name"], timestamp)
+                store_app_health_status(app["name"], timestamp, "active")
 
                 return response_dict
 
@@ -144,6 +152,7 @@ def appHealthCheck():
                 return dict()
 
         time.sleep(API_SLEEP_TIME)
+
 
 def apiHealthCheck():
     """
@@ -158,7 +167,7 @@ def apiHealthCheck():
                 response_dict = requests.get(api_url).json()
                 timestamp = response_dict["time_stamp"]
                 # Store module health status in MongoDB
-                store_health_status(module_name, float(timestamp))
+                store_health_status(module_name, float(timestamp), "active")
                 return response_dict
 
             except Exception as e:
@@ -222,7 +231,7 @@ def getHealthStatus():
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
-                    store_health_status(module_name, float(timestamp))
+                    store_health_status(module_name, float(timestamp), "active")
                 else:
                     print(
                         "Error: Required fields are missing in the health status message.")
@@ -259,7 +268,7 @@ def timeOutTracker():
                         print(
                             f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
                         store_health_status(module_name, last_update_timestamp, "inactive")
-                        updateStatus(module_name)
+                        # updateStatus(module_name)
                         """
                         TO DO : some more action when required
                         """
@@ -267,6 +276,27 @@ def timeOutTracker():
                     print(
                         f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
                     # Continue to the next module in case of any error
+                    continue
+
+            # Iterate through the list of apps
+            for app_name in getAppData():
+                try:
+                    last_update_timestamp = get_app_last_update_timestamp(app_name)
+
+                    if last_update_timestamp and (
+                            current_timestamp - last_update_timestamp) > TIMEOUT_THRESHOLD:
+                        # Take action and send notification to admin/dev
+                        print(
+                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..")
+                        store_app_health_status(app_name, last_update_timestamp, "inactive")
+                        # updateStatus(app_name)
+                        """
+                        TO DO : some more action when required
+                        """
+                except Exception as e:
+                    print(
+                        f"Error: {e}. Failed to monitor app '{app_name}' for timeout.")
+                    # Continue to the next app in case of any error
                     continue
 
             # Sleep for a specific interval
@@ -296,6 +326,7 @@ def timeOutTracker():
 
 if __name__ == "__main__":
     print("Monitoring System Started....")
+    SERVICES, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
     # Create a producer to send healthcheck request at regular intervals and update the timeout queue
     producer_thread = threading.Thread(target=postHealthCheck, args=())
 
