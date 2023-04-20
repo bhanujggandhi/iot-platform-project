@@ -3,12 +3,15 @@ import sys
 import time
 
 from notification_utils import Notification
+from logger_utils import Logger
 from Messenger import Consume, Produce
 
 TOPIC_NOTIFICATION = "topic_notification"
+SERVICE_NAME = "Notification"
 
-# Creating object of class Notification
+# Creating object of class Notification, Logger
 notification = Notification()
+logger = Logger()
 
 # utilising message as per need
 def utilise_message(produce, value):
@@ -31,14 +34,23 @@ def utilise_message(produce, value):
                 key = ""
                 message = {"to": value['src'], "src" : value['to'], "data" : data}
                 produce.push(value['src'], key, json.dumps(message))
+
+                msg = f"Replied to Monitoring Service for Health Checkup Request with timestamp : {data['timestamp']}."
+                logger.log(service_name = SERVICE_NAME, level = 0, msg = msg)
             except :
-                print('Error in Data Format.')
+                msg = f'Invalid Arguments found while consuming from Kafka Topic : {TOPIC_NOTIFICATION}.'
+                print(msg)
+                logger.log(service_name = SERVICE_NAME, level = 2, msg = msg)
         
         else :
-            print('Invalid Arguments Provided.')
+            msg = f'Invalid Arguments found while consuming from Kafka Topic : {TOPIC_NOTIFICATION}.'
+            print(msg)
+            logger.log(service_name = SERVICE_NAME, level = 2, msg = msg)
 
     else :
-        print('Invalid Arguments Provided.')
+        msg = f'Invalid Arguments found while consuming from Kafka Topic : {TOPIC_NOTIFICATION}.'
+        print(msg)
+        logger.log(service_name = SERVICE_NAME, level = 2, msg = msg)
 
 
 # Driver Code
