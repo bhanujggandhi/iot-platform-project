@@ -13,13 +13,14 @@ MONITORING SERVICE:
     * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time()} }
     * API format for modules which doen't use Kafka : /ping/{module_name}
 """
-import requests
 import json
-import time
-from decouple import config
-from pymongo import MongoClient
 import threading
-from Messenger import Produce, Consume
+import time
+
+import requests
+from decouple import config
+from Messenger import Consume, Produce
+from pymongo import MongoClient
 
 PRODUCER_SLEEP_TIME = 3
 CONSUMER_SLEEP_TIME = 1
