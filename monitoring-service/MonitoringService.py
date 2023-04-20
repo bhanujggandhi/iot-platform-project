@@ -243,6 +243,7 @@ def timeOutTracker():
     """
     print("Tracker to monitor modules started....")
     while True:
+<<<<<<< Updated upstream
         try:
             # Check if any module has not responded for a long time
             current_timestamp = time.time()
@@ -274,6 +275,23 @@ def timeOutTracker():
         except Exception as e:
             print(f"Error: {e}. Failed to monitor modules to track .")
             continue
+=======
+        msg = consumer.poll(1.0)
+        if msg is None:
+            # Initial message consumption may take up to
+            # `session.timeout.ms` for the consumer group to
+            # rebalance and start consuming
+            # print("Waiting...")
+            pass
+        elif msg.error():
+            print("ERROR: %s".format(msg.error()))
+        else:
+            # Extract the (optional) key and value, and print.
+            print(msg)
+            print(f"{msg.topic()}: [UP]")
+            # print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
+            #     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
+>>>>>>> Stashed changes
 
 
 if __name__ == "__main__":

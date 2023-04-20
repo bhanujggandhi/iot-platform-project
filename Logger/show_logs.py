@@ -13,7 +13,7 @@ db = client.LoggerDB
 collection = db.loggingCollection
 
 # find all data in DB
-cursor = collection.find()
+cursor = collection.find(sort=[("timestamp", 1)])
 
 latest_timetimestamp = 0
 
