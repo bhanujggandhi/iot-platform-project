@@ -101,8 +101,8 @@ def deploy_app(appname: str, appid: str, userid: str):
     curr_user = user_collection.find_one({"_id": ObjectId(userid)})
 
     if not curr_app:
-        message = {"status": 404, "msg": "Could not find the app"}
-        produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
+        message = {"src": TOPIC, "status": 404, "msg": "Could not find the app"}
+        produce.push("topic-internal-api", "", json.dumps(message))
 
         return {"success": 404, "err": "App does not found"}
 
@@ -196,20 +196,50 @@ def initialize():
     module = module_data["modules"]
 
     for i, service in enumerate(module):
-        collection.delete_many({"name": service})
-        cmd = f"docker stop {service} && docker rm {service}"
+        # collection.delete_many({"name": service})
+        # cmd = f"docker stop {service} && docker rm {service}"
+        # os.system(cmd)
+        # cmd = f"docker rmi {service}"
+        # os.system(cmd)
+        # generate_docker_image(service)
+        # cmd = f"docker build -t {service} {service}"
+        # os.system(cmd)
+        # assign_port = get_free_port()
+        # cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
+        # os.system(cmd)
+        # upservices[service] = {"port": assign_port, "ip": ip}
+        # data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+        # collection.insert_one(data)
+        cmd = f"kubectl apply -f ./{service}/manifests"
         os.system(cmd)
-        cmd = f"docker rmi {service}"
+
+    return {"services": upservices}
+
+
+def destroy():
+    upservices = {}
+    collection = db.Service
+    with open("module.json", "r") as f:
+        module_data = json.load(f)
+    module = module_data["modules"]
+
+    for i, service in enumerate(module):
+        # collection.delete_many({"name": service})
+        # cmd = f"docker stop {service} && docker rm {service}"
+        # os.system(cmd)
+        # cmd = f"docker rmi {service}"
+        # os.system(cmd)
+        # generate_docker_image(service)
+        # cmd = f"docker build -t {service} {service}"
+        # os.system(cmd)
+        # assign_port = get_free_port()
+        # cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
+        # os.system(cmd)
+        # upservices[service] = {"port": assign_port, "ip": ip}
+        # data = {"name": service, "port": assign_port, "ip": ip, "active": True}
+        # collection.insert_one(data)
+        cmd = f"kubectl delete -f ./{service}/manifests"
         os.system(cmd)
-        generate_docker_image(service)
-        cmd = f"docker build -t {service} {service}"
-        os.system(cmd)
-        assign_port = get_free_port()
-        cmd = f"docker run --name {service} -d -p {assign_port}:80 {service}"
-        os.system(cmd)
-        upservices[service] = {"port": assign_port, "ip": ip}
-        data = {"name": service, "port": assign_port, "ip": ip, "active": True}
-        collection.insert_one(data)
 
     return {"services": upservices}
 
@@ -283,6 +313,7 @@ service_func = {
     "stop": stop_node,
     "init": initialize,
     "remove": remove_node,
+    "destroy": destroy,
 }
 
 app_func = {"deploy": deploy_app, "start": start_app, "stop": stop_app, "remove": remove_app}
@@ -300,28 +331,29 @@ def utilise_message(value):
         appid = value["appid"]
         userid = value["userid"]
     except:
-        message = {"status": "False", "msg": "Message format is not correct"}
-        produce.push(src, TOPIC, json.dumps(message))
+        message = {"src": TOPIC, "status": "False", "msg": "Message format is not correct"}
+        produce.push(src, "", json.dumps(message))
+        return
 
     if service == "" and appname == "":
-        message = {"status": "False", "msg": "No valid service or app provided"}
-        produce.push(src, TOPIC, json.dumps(message))
+        message = {"src": TOPIC, "status": "False", "msg": "No valid service or app provided"}
+        produce.push(src, "", json.dumps(message))
     if service != "":
         if operation not in service_func.keys():
-            message = {"status": "False", "msg": f"No valid operation provided for the {service}"}
-            produce.push(src, TOPIC, json.dumps(message))
+            message = {"src": TOPIC, "status": "False", "msg": f"No valid operation provided for the {service}"}
+            produce.push(src, "", json.dumps(message))
         else:
-            if operation == "init":
+            if operation == "init" or operation == "destroy":
                 res = service_func[operation]()
             else:
                 res = service_func[operation](service)
                 print(res)
-            message = {"status": "True", "msg": res}
-            produce.push(src, TOPIC, json.dumps(message))
+            message = {"src": TOPIC, "status": "True", "msg": res}
+            produce.push(src, "", json.dumps(message))
     if appname != "":
         if operation not in app_func.keys():
-            message = {"status": "False", "msg": f"No valid operation provided for the {appname}"}
-            produce.push(src, TOPIC, json.dumps(message))
+            message = {"src": TOPIC, "status": "False", "msg": f"No valid operation provided for the {appname}"}
+            produce.push(src, "", json.dumps(message))
             print(message)
         else:
             print(value)
@@ -329,8 +361,8 @@ def utilise_message(value):
             try:
                 message = json.dumps({"status": "True", "msg": res})
             except:
-                message = {"status": "True", "msg": "deployed"}
-            produce.push(src, TOPIC, json.dumps(message))
+                message = {"src": TOPIC, "status": "True", "msg": "deployed"}
+            produce.push(src, "", json.dumps(message))
 
 
 """

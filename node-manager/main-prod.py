@@ -5,11 +5,12 @@ from Messenger import Produce
 produce = Produce()
 
 message = {
-    "service": "internal-api",
+    "service": "platform",
     "app": "",
-    "operation": "remove",
-    "id": "a12",
+    "operation": "init",
     "src": "topic_bootstrap",
+    "appid": "",
+    "userid": "",
 }
 
 produce.push("topic_node_manager", "", json.dumps(message))

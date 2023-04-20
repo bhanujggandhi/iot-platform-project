@@ -1,0 +1,9 @@
+<application>
+    <name>MyApp</name>
+    <version>1.0</version>
+    <author>John Doe</author>
+    <config>
+        <setting name="port" value="8000" />
+        <setting name="db_url" value="mongodb://localhost:27017" />
+    </config>
+</application>
