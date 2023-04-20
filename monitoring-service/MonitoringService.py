@@ -9,8 +9,8 @@ MONITORING SERVICE:
 
     INFORMATION
 
-    * MESSAGE format to sent : {"receiver_module": moduleName,"sender_module":"Moniotring service","remark": "Healthcheck" }
-    * MESSAGE format to receive : {"receiver_module": "Moniotring service","sender_module":"Your_module_name","time_stamp": time.time() }
+    * MESSAGE format to sent : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health"}}
+    * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time()} }
     * API format for modules which doen't use Kafka : /ping/{module_name}
 """
 import requests
@@ -21,56 +21,54 @@ from pymongo import MongoClient
 import threading
 from Messenger import Produce, Consume
 
-PRODUCER_SLEEP_TIME = 3 
+PRODUCER_SLEEP_TIME = 3
 CONSUMER_SLEEP_TIME = 1
-API_SLEEP_TIME = 5 
-MAIN_SLEEP_TIME = 1 
-TRACKING_INTERVAL = 10  
-TIMEOUT_THRESHOLD = 30  
+API_SLEEP_TIME = 5
+MAIN_SLEEP_TIME = 1
+TRACKING_INTERVAL = 10
+TIMEOUT_THRESHOLD = 30
 IP = "127.0.0.1"
 PORT = "8000"
-MY_TOPIC="topic_monitoring"
-MODULE_LIST=[]
+MY_TOPIC = "topic_monitoring"
+MODULE_LIST = []
 API_MODULE_LIST = []
 CONFIG_FILE_PATH = "./topic_info.json"
 
 # Establish connection to MongoDB
-mongokey = config('mongoKey')
+mongokey = config("mongoKey")
 client = MongoClient(mongokey)
 db = client["platform"]
 collection = db["Module_status"]
 # app_collection = db["AppCollection"]
 
+
 # Load topic info from configuration file
 def get_service_info(config_file):
     """get the list of topics of the various submodules from the Bootstrap Module"""
     try:
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             response = json.load(f)
             # Extract the keys and store them in a list
             Module_list = list(response.keys())
-            return response,Module_list
+            return response, Module_list
     except FileNotFoundError as e:
         print(f"Configuration file not found: {config_file}")
-        return {},[]
+        return {}, []
     except json.JSONDecodeError as e:
         print(f"Failed to decode configuration file: {config_file}. Error: {e}")
-        return {},[]
+        return {}, []
+
 
 # **********************************|    Dealing with Mongo    |***********************************
+
 
 # Function to store module health status in MongoDB
 def store_health_status(module_name, timestamp):
     try:
         # Create a document with the module name and timestamp
-        filter = {'module_name': module_name}
+        filter = {"module_name": module_name}
         # Define the update values
-        update = {
-            '$set': {
-                'status': 'active',
-                'last_updated': timestamp
-            }
-        }
+        update = {"$set": {"status": "active", "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(f"Error: {e}. Failed to store health status for module '{module_name}'")
@@ -83,30 +81,28 @@ def get_last_update_timestamp(module_name):
         document = collection.find_one({"module_name": module_name})
         # Extract and return the timestamp from the document
         if document:
-            return document['last_updated']
+            return document["last_updated"]
         else:
             return None
     except Exception as e:
         print(f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
+
 # Function to update module status in MongoDB
 def updateStatus(module_name):
     try:
         # Create a document with the module name and timestamp
-        filter = {'module_name': module_name}
+        filter = {"module_name": module_name}
         # Define the update values
-        update = {
-            '$set': {
-                'status': 'inactive'
-            }
-        }
+        update = {"$set": {"status": "inactive"}}
         # app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(f"Error: {e}. Failed to update status for module '{module_name}'")
 
 
 # **********************************| Communication with Modules |***********************************
+
 
 def apiHealthCheck():
     """
@@ -116,26 +112,27 @@ def apiHealthCheck():
         for module_name in API_MODULE_LIST:
             """need to change this api_url according to api provided by the module for health check"""
             api_url = f"http://{IP}:{PORT}/ping/{module_name}"
-        
+
             try:
                 response_dict = requests.get(api_url).json()
                 timestamp = response_dict["time_stamp"]
                 # Store module health status in MongoDB
                 store_health_status(module_name, float(timestamp))
                 return response_dict
-        
+
             except Exception as e:
                 print(e)
                 return dict()
-            
+
         time.sleep(API_SLEEP_TIME)
-   
+
+
 def postHealthCheck():
     """
     post health messages to all the module's
     """
     print("Post health check messages started... ")
-    services,MODULE_LIST=get_service_info(CONFIG_FILE_PATH)
+    services, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
     # topic_names = [value["topic_name"] for value in services.values()]
 
     if not MODULE_LIST:
@@ -145,20 +142,21 @@ def postHealthCheck():
     produce = Produce()  # Instantiate Kafka producer
     while True:
         try:
-            for Module in MODULE_LIST :
+            for Module in MODULE_LIST:
                 key = ""
                 topic_name = services[Module]["topic_name"]
 
                 # needs to decide what message format will be..
-                message = {"receiver_module": Module,"sender_module":"Moniotring service","remark": "Healthcheck" }
+                message = {"receiver_module": Module, "sender_module": "Moniotring service", "remark": "Healthcheck"}
                 produce.push(topic_name, key, json.dumps(message))
         except KeyError as e:
             print(f"KeyError: {e}. Failed to post health check message.")
         except Exception as e:
             print(f"Error: {e}. Failed to post health check message.")
-        # time interval for next health message to send.    
+        # time interval for next health message to send.
         finally:
             time.sleep(PRODUCER_SLEEP_TIME)
+
 
 def getHealthStatus():
     """
@@ -195,7 +193,8 @@ def getHealthStatus():
 
 
 # **********************************| Monitoring of Modules |***********************************
- 
+
+
 def timeOutTracker():
     """
     Method that keep track of all the modules to be monitored
@@ -238,7 +237,7 @@ if __name__ == "__main__":
     # Create a consumer to consume the message and update the timeout queue
     consumer_thread = threading.Thread(target=getHealthStatus, args=())
 
-    #Create a timeout tracker to keep track of the values in the timeout queue
+    # Create a timeout tracker to keep track of the values in the timeout queue
     tracker_thread = threading.Thread(target=timeOutTracker, args=())
 
     # start the all the  threads.
@@ -255,4 +254,3 @@ if __name__ == "__main__":
         producer_thread.join()
         consumer_thread.join()
         tracker_thread.join()
-
