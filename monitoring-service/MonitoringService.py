@@ -7,8 +7,8 @@ MONITORING SERVICE:
     INFORMATION
     Module Names : Sensor Manager, Node Manager, Monitoring Service.
 
-    * MESSAGE format to sent  : {"to": "your_topic_name, "src":"topic_monitoring","data": {"operation": "health", "module": "my_module"}}
-    * MESSAGE format to receive : {"to": "topic_monitoring", "src":"your_topic_name","data": {"timestamp": time.time() ,"module": "my_module"} }
+    * MESSAGE format to sent  : {"to": "<your_topic_name>", "src":"topic_monitoring","data": {"operation": "health", "module": "<my_module>"}}
+    * MESSAGE format to receive : {"to": "topic_monitoring", "src":"<your_topic_name>","data": {"timestamp": time.time() ,"module": "<my_module>"} }
     * MESSAGE format for API(module w/o kafka) health check : /ping/{module_name}
     * MESSAGE format for APP health check : {"name": "<app_name>", "data": {"timestamp": time.time()}}
 """
@@ -106,7 +106,7 @@ def get_last_update_timestamp(module_name):
             f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
-
+# Function to get last update timestamp of a specific app from MongoDB
 def get_app_last_update_timestamp(app_name):
     try:
         # Query MongoDB to get the latest document of the specific module based on module_name field
