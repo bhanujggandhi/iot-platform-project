@@ -7,8 +7,8 @@ Input for fetchdata function:
         "numofsensors": 2,
         "lat": 17.445402,
         "long": 78.349875,
-        "sensorIDs": ["WM-ds-PH03-00"],
-        "data_flag": False
+        "sensorIDs": ["WM-WF-PH03-00"],
+        "data_flag": True
     }
     
 ```
