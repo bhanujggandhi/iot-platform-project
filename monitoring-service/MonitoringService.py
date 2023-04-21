@@ -9,7 +9,7 @@ MONITORING SERVICE:
 
     * MESSAGE format to sent  : {"to": "<your_topic_name>", "src":"topic_monitoring","data": {"operation": "health", "module": "<my_module>"}}
     * MESSAGE format to receive : {"to": "topic_monitoring", "src":"<your_topic_name>","data": {"timestamp": time.time() ,"module": "<my_module>"} }
-    * MESSAGE format for API(module w/o kafka) health check : /ping/{module_name}
+    * MESSAGE format for API(module w/o kafka) health check : /ping/{module_name} : {"name": "<module name>", "data": {"timestamp": time.time()}}
     * MESSAGE format for APP health check : {"name": "<app_name>", "data": {"timestamp": time.time()}}
 """
 import json
