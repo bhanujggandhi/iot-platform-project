@@ -45,7 +45,7 @@ Example Output from fetchdata function:
 * if SensorsIDs are passed then data is fetched for those sensors only , regardless of readingtype,lat,long.
 
 Default values for parms are:
-```json
+```python
     readingtype = ""
     starttime = ""
     numofsensors = 1
@@ -57,7 +57,7 @@ Default values for parms are:
 ```
 
 Expected Datatype of fields in parms:
-```json
+```python
     readingtype = string
     starttime = string
     numofsensors = int
