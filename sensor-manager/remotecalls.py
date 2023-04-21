@@ -93,18 +93,21 @@ def fetchdata(parms):
     if "sensorIDs" in parms and len(parms["sensorIDs"]) > 0:
         SensorIDsbyUser = parms["sensorIDs"]
 
-    if readingType in parms and parms["readingtype"] != "":
+    if "readingtype" in parms and parms["readingtype"] != "":
         readingType = str(parms["readingtype"])
         if validateReadingType(readingType):
             readingType = readingType
         else:
             return {"Error": "Invalid reading type"}
 
-    if "lat" in parms and "long" in parms and parms["lat"] != "" and parms["long"] != "":
-        latitute = str(parms["lat"])
-        longitude = str(parms["long"])
+    if "lat" in parms and "long" in parms:
+        if type(parms["lat"]) == float and type(parms["long"]) == float:
+            latitute = str(parms["lat"])
+            longitude = str(parms["long"])
+        else:
+            return {"Error": "Invalid lat long"}
 
-    if startTime in parms and parms["starttime"] != "":
+    if "starttime" in parms and parms["starttime"] != "":
         startTime = parms["starttime"]
         if startTime[-1] != "Z":
             startTime = startTime + "Z"
@@ -113,7 +116,7 @@ def fetchdata(parms):
         else:
             return {"Error": "Invalid start time"}
 
-    if numofSensor in parms:
+    if "numofsensors" in parms:
         if type(parms["numofsensors"]) == int:
             if parms["numofsensors"] > 0:
                 numofSensor = parms["numofsensors"]
@@ -155,7 +158,7 @@ def fetchdata(parms):
             res = collection.find_one({"location": latitute+","+longitude})
             if res:
                 sensorIDs = res["sensorIDs"]
-                print("Found sensorIDs for given lat long")
+                # print("Found sensorIDs for given lat long")
 
     # check if reading type some value
     if readingType != "":
@@ -184,13 +187,13 @@ def fetchdata(parms):
 
 def main():
     parms = {
-        # "readingtype": "Flowrate",
+        "readingtype": "Flowrate",
         "starttime": "2023-01-14T08:26:20Z",
         "numofsensors": 2,
-        "lat": "17.445402",
-        "long": "78.349875",
+        "lat": 17.445402,
+        "long": 78.349875,
         # "sensorIDs": ["WM-ds-PH03-00"],
-        "data_flag": True
+        "data_flag": False
     }
     data = fetchdata(parms)
     # with open("data.json", "w") as f:
