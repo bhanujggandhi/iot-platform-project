@@ -11,6 +11,11 @@ MONITORING SERVICE:
     * MESSAGE format to receive : {"to": "topic_monitoring", "src":"<your_topic_name>","data": {"timestamp": time.time() ,"module": "<my_module>"} }
     * MESSAGE format for API(module w/o kafka) health check : /ping/{module_name} : {"name": "<module name>", "data": {"timestamp": time.time()}}
     * MESSAGE format for APP health check : {"name": "<app_name>", "data": {"timestamp": time.time()}}
+
+    levels = {0-DEBUG, 1-INFO, 2-WARNING, 3-ERROR, 4-CRITICAL]
+    logger.log(service_name = SERVICE_NAME, level = 1, msg = ' < msg > ')
+    logger.log(service_name = SERVICE_NAME, level = 1, msg = ' < msg > ', app_name = <app_name>, user_id = <developer_id>)
+    
 """
 import json
 import threading
@@ -144,7 +149,7 @@ def get_developer_mailid(app_name):
     try:
         # Update status of app to inactive in App collection.
         filter = {"name": app_name}
-        update = {"$set": {"status": "false"}}
+        update = {"$set": {"active": False}}
         app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
