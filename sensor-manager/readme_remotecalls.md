@@ -12,7 +12,17 @@ Input for fetchdata function:
     }
     
 ```
-* Here based on keys readingtype,lat,long Sensors are selected and starttime is used to get the data from that time to current time/till 8days (whichever is minimum). NumofSensors denotes required instance of the sensors, If upon seraching the sensors based on readingtype,lat,long we get more sensors than required instance then top n sensors are selected randomly , where n denotes numofsensors.
+## Recommended SensorIDS for testing:
+| SensorID  | Description |
+| ---  | --- |
+| WM-WF-PH03-00  | Water Quality |
+| SL-VN03-00  | Solar Monitoring |
+| WM-WF-PH03-00  | Smart Room Energy Monitoring |
+
+
+
+
+* Here based on keys readingtype,lat,long Sensors are selected and starttime is used to get the data from that time to current time/till 8days (whichever is minimum). NumofSensors denotes required instance of the sensors, If upon searching the sensors based on readingtype,lat,long we get more sensors than required instance then top n sensors are selected randomly , where n denotes numofsensors.
 
 * if data_flag is set to True then data is fetched else the function returns the sensorIDs of the sensors which are selected.
 
