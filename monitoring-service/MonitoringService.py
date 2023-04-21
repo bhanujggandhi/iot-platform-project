@@ -20,9 +20,10 @@ import requests
 from decouple import config
 from pymongo import MongoClient
 from logger_utils import Logger
+from bson import ObjectId
 from Messenger import Consume, Produce
 
-PRODUCER_SLEEP_TIME = 4
+PRODUCER_SLEEP_TIME = 3
 CONSUMER_SLEEP_TIME = 2
 API_SLEEP_TIME = 5
 MAIN_SLEEP_TIME = 1
@@ -143,7 +144,7 @@ def get_developer_mailid(app_name):
     try:
         # Update status of app to inactive in App collection.
         filter = {"name": app_name}
-        update = {"$set": {"status": "inactive"}}
+        update = {"$set": {"status": "false"}}
         app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
@@ -154,7 +155,7 @@ def get_developer_mailid(app_name):
         # Get developer id from App collection associated with this app.
         document = app_collection.find_one({"name": app_name})
         if document:
-            developer_id = document["developer"]
+            developer_id = str(document["developer"])
         else:
             print(f"No app found with name '{app_name}' in App collection.")
             return None
@@ -164,10 +165,10 @@ def get_developer_mailid(app_name):
 
     try:
         # Get developer mail id from User collection.
-        document = user_collection.find_one({"id": developer_id})
+        document = user_collection.find_one({"_id": ObjectId(developer_id)})
         if document:
-            developer_mailid = document["email"]
-            developer_name = document["name"]
+            developer_mailid = str(document["email"])
+            developer_name = str(document["name"])
         else:
             print(
                 f"No user found with id '{developer_id}' in User collection.")
@@ -216,6 +217,7 @@ def appHealthCheck():
     """
     Health check of Applications deployed on the platform which are currently active.
     """
+    print("App health check started... ")
     while True:
         app_list = getAppData()
 
@@ -241,6 +243,7 @@ def apiHealthCheck():
     """
     Health check of modules which does not use Kafka, through API
     """
+    print("Api health Check started... ")
     while True:
         for module_name in API_MODULE_LIST:
             """need to change this api_url according to api provided by the module for health check"""
@@ -393,15 +396,20 @@ if __name__ == "__main__":
     SERVICES, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
     # Create a producer to send healthcheck request at regular intervals and update the timeout queue
     producer_thread = threading.Thread(target=postHealthCheck, args=())
-
+    
     # Create a consumer to consume the message and update the timeout queue
     consumer_thread = threading.Thread(target=getHealthStatus, args=())
+    
+    # Create a thread for app healthcheck  at regular intervals and update the timeout queue
+    appHealth_thread = threading.Thread(target=appHealthCheck, args=())
 
+    time.sleep(TRACKING_INTERVAL)
     # Create a timeout tracker to keep track of the values in the timeout queue
     tracker_thread = threading.Thread(target=timeOutTracker, args=())
 
     # start the all the  threads.
     producer_thread.start()
+    appHealth_thread.start()
     consumer_thread.start()
     tracker_thread.start()
 
@@ -413,4 +421,5 @@ if __name__ == "__main__":
         # Gracefully terminate threads on keyboard interrupt
         producer_thread.join()
         consumer_thread.join()
+        appHealth_thread.join()
         tracker_thread.join()
