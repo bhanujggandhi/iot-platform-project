@@ -14,13 +14,14 @@ class Produce:
         if err:
             print("ERROR: Message failed delivery: {}".format(err))
         else:
-            print(
-                "Produced event to topic {topic}: key = {key:12} value = {value:12}".format(
-                    topic=msg.topic(),
-                    key=msg.key().decode("utf-8"),
-                    value=msg.value().decode("utf-8"),
-                )
-            )
+            pass
+            # print(
+            #     "Produced event to topic {topic}: key = {key:12} value = {value:12}".format(
+            #         topic=msg.topic(),
+            #         key=msg.key().decode("utf-8"),
+            #         value=msg.value().decode("utf-8"),
+            #     )
+            # )
 
     def push(self,topic, key, value) :
         self.producer.produce(topic, value, key, on_delivery=self.delivery_callback)

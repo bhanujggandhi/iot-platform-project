@@ -19,7 +19,7 @@ import time
 import requests
 from decouple import config
 from pymongo import MongoClient
-
+from logger_utils import Logger
 from Messenger import Consume, Produce
 
 PRODUCER_SLEEP_TIME = 4
@@ -30,11 +30,20 @@ TRACKING_INTERVAL = 10
 TIMEOUT_THRESHOLD = 30
 IP = "127.0.0.1"
 PORT = "8000"
+
+#kafka topics and other related info.
 MY_TOPIC = "topic_monitoring"
+TOPIC_NOTIFICATION = "topic_notification"
+SERVICE_NAME = "monitoring-service"
+produce = Produce()  # Instantiate Kafka producer
+logger = Logger()   # Instantiate logger
+
+# module information
 MODULE_LIST = []  # modules which uses kafka
 API_MODULE_LIST = []  # modules which are not using kafka
 CONFIG_FILE_PATH = "./topic_info.json"
 SERVICES = []
+
 # Establish connection to MongoDB
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
@@ -126,6 +135,33 @@ def get_app_last_update_timestamp(app_name):
 def getAppData():
     return list(app_collection.find({"active": True}))
 
+def get_devloper_mailid(app_name):
+
+    # update status of app to inactive in App collection.
+    try:
+        # Create a document with the app name
+        filter = {"name": app_name}
+        # Define the update values
+        update = {"$set": {"status": "inactive" }}
+        app_collection.update_one(filter, update, upsert=True)
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.")
+    
+    # get developer id from App collection associated with this app.
+
+    dev_mailid=""
+    return dev_mailid
+
+# send notification to developer if app crashed.
+def send_notification_dev(app_name):
+    developer_mailid = get_devloper_mailid(app_name)
+    subject = ""
+    body = ""
+
+    key = ""
+    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
+    produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
 
 # **********************************| Communication with Modules |***********************************
 
@@ -188,7 +224,6 @@ def postHealthCheck():
         print("Failed to get MODULE_LIST from configuration file. Aborting...")
         return
 
-    produce = Produce()  # Instantiate Kafka producer
     while True:
         try:
             for Module in MODULE_LIST:
@@ -288,6 +323,7 @@ def timeOutTracker():
                         print(
                             f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..")
                         store_app_health_status(app_name, last_update_timestamp, "inactive")
+                        send_notification_dev(app_name)
                         # updateStatus(app_name)
                         """
                         TO DO : some more action when required
