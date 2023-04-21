@@ -22,6 +22,7 @@ Input for fetchdata function:
 
 
 
+* All the Fields are optional, if not passed then default values are used.
 
 * Here based on keys readingtype,lat,long Sensors are selected and starttime is used to get the data from that time to current time/till 8days (whichever is minimum). NumofSensors denotes required instance of the sensors, If upon searching the sensors based on readingtype,lat,long we get more sensors than required instance then top n sensors are selected randomly , where n denotes numofsensors.
 
