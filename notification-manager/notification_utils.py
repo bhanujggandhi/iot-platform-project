@@ -8,7 +8,7 @@ from logger_utils import Logger
 SENDER_EMAIL = config("NOTIFICATION_SENDER_EMAIL")
 SENDER_PASSWORD = config("NOTIFICATION_SENDER_PASSWORD")
 
-SERVICE_NAME = "notification-manager"
+SERVICE_NAME = "notification-service"
 
 # Creating object of class Logger
 logger = Logger()

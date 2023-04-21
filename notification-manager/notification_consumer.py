@@ -7,7 +7,7 @@ from logger_utils import Logger
 from Messenger import Consume, Produce
 
 TOPIC_NOTIFICATION = "topic_notification"
-SERVICE_NAME = "Notification"
+SERVICE_NAME = "notification-service"
 
 # Creating object of class Notification, Logger
 notification = Notification()
