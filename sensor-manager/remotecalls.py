@@ -1,4 +1,3 @@
-
 import requests
 from decouple import config
 from pymongo import MongoClient
@@ -17,7 +16,7 @@ def fetchdatahelper(sensorIDs, startTime):
     data = {}
     # print("Fetching data for ", sensorIDs, " from ", startTime)
     for i in sensorIDs:
-        res = requests.get(dataFetchAPI+i+"/feeds?start="+startTime)
+        res = requests.get(dataFetchAPI + i + "/feeds?start=" + startTime)
         if res.status_code == 200:
             res = res.json()
             # feild names

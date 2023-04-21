@@ -20,14 +20,16 @@
 # print(name, version, author, config)
 
 
-import yaml
 import json
+
+import jsonschema
+import yaml
 
 # Load the YAML file
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
-print(config)
+# print(config)
 
 with open("out.txt", "w") as f:
     json.dump(config, f)
@@ -61,5 +63,10 @@ deployment = {
     },
 }
 
-with open("out.yaml", "w") as f:
-    print(yaml.dump(deployment, f))
+with open("out.yaml", "r") as f:
+    sched_yaml = yaml.safe_load(f)
+
+print(sched_yaml)
+print(schema)
+# print(validate(sched_yaml, schema))
+print(jsonschema.validate(json.dumps(sched_yaml), json.dumps(schema)))

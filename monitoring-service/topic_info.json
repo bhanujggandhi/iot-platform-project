@@ -7,6 +7,18 @@
   },
   "Notification Manager": {
     "topic_name": "topic_notification"
+  },
+  "Analytics Module": {
+    "topic_name": "topic_analytics"
+  },
+  "Bootstrap Module": {
+    "topic_name": "topic_bootstrap"
+  },
+  "Internal API Module": {
+    "topic_name": "topic_internal_api"
+  },
+  "Sensor Data Module": {
+    "topic_name": "topic_sensor_data"
   }
 
 }
