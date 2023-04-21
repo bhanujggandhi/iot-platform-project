@@ -31,7 +31,7 @@ TIMEOUT_THRESHOLD = 30
 IP = "127.0.0.1"
 PORT = "8000"
 
-#kafka topics and other related info.
+# kafka topics and other related info.
 MY_TOPIC = "topic_monitoring"
 TOPIC_NOTIFICATION = "topic_notification"
 SERVICE_NAME = "monitoring-service"
@@ -51,6 +51,7 @@ db = client["platform"]
 collection = db["Module_Status"]
 app_collection = db["App"]
 app_status_collection = db["App_Status"]
+user_collection = db["User"]
 
 
 # Load topic info from configuration file
@@ -116,6 +117,8 @@ def get_last_update_timestamp(module_name):
         return None
 
 # Function to get last update timestamp of a specific app from MongoDB
+
+
 def get_app_last_update_timestamp(app_name):
     try:
         # Query MongoDB to get the latest document of the specific module based on module_name field
@@ -135,35 +138,79 @@ def get_app_last_update_timestamp(app_name):
 def getAppData():
     return list(app_collection.find({"active": True}))
 
-def get_devloper_mailid(app_name):
-
-    # update status of app to inactive in App collection.
+# return the mail id of developer associated with the app.
+def get_developer_mailid(app_name):
     try:
-        # Create a document with the app name
+        # Update status of app to inactive in App collection.
         filter = {"name": app_name}
-        # Define the update values
-        update = {"$set": {"status": "inactive" }}
+        update = {"$set": {"status": "inactive"}}
         app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
             f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.")
-    
-    # get developer id from App collection associated with this app.
+        return None
 
-    dev_mailid=""
-    return dev_mailid
+    try:
+        # Get developer id from App collection associated with this app.
+        document = app_collection.find_one({"name": app_name})
+        if document:
+            developer_id = document["developer"]
+        else:
+            print(f"No app found with name '{app_name}' in App collection.")
+            return None
+    except Exception as e:
+        print(f"Error: {e}. Failed to get developer id for '{app_name}' app.")
+        return None
+
+    try:
+        # Get developer mail id from User collection.
+        document = user_collection.find_one({"id": developer_id})
+        if document:
+            developer_mailid = document["email"]
+            developer_name = document["name"]
+        else:
+            print(
+                f"No user found with id '{developer_id}' in User collection.")
+            return None
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        return None
+
+    return developer_mailid,developer_name
 
 # send notification to developer if app crashed.
-def send_notification_dev(app_name):
-    developer_mailid = get_devloper_mailid(app_name)
-    subject = ""
-    body = ""
+def notify_to_developer(app_name):
+    try:
+        developer_mailid,developer_name = get_developer_mailid(app_name)
+        if not developer_mailid:
+            print(
+                f"Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+            return False
+    except Exception as e:
+        print(
+            f"Error: {e}. Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+        return False
+
+    subject = f"URGENT Your app '{app_name}' has crashed!"
+    body = f"Dear '{developer_name}',We regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
-    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
-    produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
+    message = {"receiver_email": developer_mailid,
+              "subject": subject, "body": body}
+
+    try:
+        produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
+        print(
+            f"Notification sent to developer '{developer_mailid}' for app '{app_name}'.")
+        return True
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'.")
+        return False
 
 # **********************************| Communication with Modules |***********************************
+
 
 def appHealthCheck():
     """
@@ -266,7 +313,8 @@ def getHealthStatus():
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
-                    store_health_status(module_name, float(timestamp), "active")
+                    store_health_status(
+                        module_name, float(timestamp), "active")
                 else:
                     print(
                         "Error: Required fields are missing in the health status message.")
@@ -301,8 +349,8 @@ def timeOutTracker():
                         # Take action and send notification to admin
                         print(
                             f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
-                        store_health_status(module_name, last_update_timestamp, "inactive")
-                        # updateStatus(module_name)
+                        store_health_status(
+                            module_name, last_update_timestamp, "inactive")
                         """
                         TO DO : some more action when required
                         """
@@ -315,19 +363,17 @@ def timeOutTracker():
             # Iterate through the list of apps
             for app_name in getAppData():
                 try:
-                    last_update_timestamp = get_app_last_update_timestamp(app_name)
+                    last_update_timestamp = get_app_last_update_timestamp(
+                        app_name)
 
                     if last_update_timestamp and (
                             current_timestamp - last_update_timestamp) > TIMEOUT_THRESHOLD:
                         # Take action and send notification to admin/dev
                         print(
                             f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..")
-                        store_app_health_status(app_name, last_update_timestamp, "inactive")
-                        send_notification_dev(app_name)
-                        # updateStatus(app_name)
-                        """
-                        TO DO : some more action when required
-                        """
+                        store_app_health_status(
+                            app_name, last_update_timestamp, "inactive")
+                        notify_to_developer(app_name)
                 except Exception as e:
                     print(
                         f"Error: {e}. Failed to monitor app '{app_name}' for timeout.")
