@@ -2,6 +2,7 @@ import requests
 from decouple import config
 from pymongo import MongoClient
 import datetime
+import json
 parametertoSensorIDAPI = "https://iudx-rs-onem2m.iiit.ac.in/resource/nodes/"
 
 
@@ -134,7 +135,7 @@ def fetchdata(parms):
     if len(SensorIDsbyUser) > 0:
         sensorIDs = SensorIDsbyUser
         if validateSensorIDs(sensorIDs):
-            print("Valid sensorIDs")
+            # print("Valid sensorIDs")
             if data_flag:
                 data = fetchdatahelper(sensorIDs, startTime)
                 return data
@@ -192,12 +193,12 @@ def main():
         "numofsensors": 2,
         "lat": 17.445402,
         "long": 78.349875,
-        # "sensorIDs": ["WM-ds-PH03-00"],
-        "data_flag": False
+        "sensorIDs": ["WM-WF-PH03-00"],
+        "data_flag": True
     }
     data = fetchdata(parms)
     # with open("data.json", "w") as f:
-    #     f.write(str(data))
+    #     f.write(json.dumps(data))
     print(data)
 
 
