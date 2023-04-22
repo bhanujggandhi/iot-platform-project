@@ -26,7 +26,6 @@ class Logger:
 
             # send json object to mongoDB collection
             res = self.collection.insert_one(log_data)
-            print(res)
 
         except Exception as e:
             print("Error: ", e)

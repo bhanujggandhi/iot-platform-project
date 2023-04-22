@@ -21,6 +21,6 @@
     "topic_name": "topic_sensor_data_health"
   },
   "Workflow Manager": {
-    "topic_name": "topic_sensor_data_health"
+    "topic_name": "topic_workflow_manager_health"
   }
 }

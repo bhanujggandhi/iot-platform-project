@@ -326,7 +326,7 @@ def notify_to_developer(app_name):
         return False
 
     subject = f"URGENT Your app '{app_name}' has crashed!"
-    body = f"Dear '{developer_name}',We regret to inform you that your app, '{app_name}' has crashed."
+    body = f"Dear {developer_name}, \nWe regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
     message = {"receiver_email": developer_mailid,
@@ -363,7 +363,7 @@ def notify_to_admin(module_name):
     admin_name = ADMIN_NAME
     admin_mailid = ADMIN_MAILID
     subject = f"URGENT, In your platform '{module_name}' has crashed!"
-    body = f"Dear '{admin_name}',We regret to inform you that In your platform, module '{module_name}' has crashed please try to restart."
+    body = f"Dear {admin_name}, \nWe regret to inform you that In your platform, module '{module_name}' has crashed please try to restart."
     key = ""
     message = {"receiver_email": admin_mailid,
                "subject": subject, "body": body}
@@ -462,7 +462,7 @@ def postHealthCheck():
     """
     post health messages to all the module's
     """
-    print("Post health check messages started... ")
+    print("Post health check started... ")
     # topic_names = [value["topic_name"] for value in SERVICES.values()]
 
     if not MODULE_LIST:
