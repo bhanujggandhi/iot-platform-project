@@ -21,6 +21,18 @@ app = FastAPI(
     description="This API module contains all the platform's internal APIs that will be required by platform to work",
 )
 
+origins = [
+    "0.0.0.0",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 """
 Enable CORS so that the React application can communicate with FastAPI. 
@@ -58,4 +70,4 @@ async def verify_token(token: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", log_level="info", port=8000, workers=4, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", log_level="info", port=5000, workers=4, reload=True)
