@@ -3,20 +3,33 @@
 from pymongo import MongoClient
 import pymongo
 from decouple import config
+
 ActiveNodeSchema = {
     "$jsonSchema": {
         "bsonType": "object",
         "required": ["VMid", "IP", "Port", "CPU", "Memory", "OtherStats"],
         "properties": {
-            "VMid": {"bsonType": "string", "description": "must be a string and is required"},
-            "IP": {"bsonType": "string", "description": "must be a string and is required"},
+            "VMid": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
+            "IP": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
             "Port": {"bsonType": "int", "description": "must be a int and is required"},
             "CPU": {"bsonType": "int", "description": "must be a int and is required"},
-            "Memory": {"bsonType": "int", "description": "must be a int and is required"},
+            "Memory": {
+                "bsonType": "int",
+                "description": "must be a int and is required",
+            },
             "OtherStats": {
                 "bsonType": "array",
                 "description": "must be an array and is required",
-                "items": {"bsonType": "string", "description": "must be a string if the field is present"},
+                "items": {
+                    "bsonType": "string",
+                    "description": "must be a string if the field is present",
+                },
             },
         },
     }
@@ -27,10 +40,22 @@ userCollectionSchema = {
         "bsonType": "object",
         "required": ["name", "role", "email", "password"],
         "properties": {
-            "name": {"bsonType": "string", "description": "must be a string and is required"},
-            "role": {"bsonType": "string", "description": "must be a string and is required"},
-            "email": {"bsonType": "string", "description": "must be a string and is required"},
-            "password": {"bsonType": "string", "description": "must be a string and is required"},
+            "name": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
+            "role": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
+            "email": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
+            "password": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
+            },
         },
     }
 }
@@ -43,7 +68,10 @@ ApiCollectionSchema = {
             "bsonType": "object",
             "title": "Student Object Validation",
             "required": ["ApiKey", "developerId"],
-            "properties": {"ApiKey": {"bsonType": "string"}, "developerId": {"bsonType": "string"}},
+            "properties": {
+                "ApiKey": {"bsonType": "string"},
+                "developerId": {"bsonType": "string"},
+            },
         }
     }
 }

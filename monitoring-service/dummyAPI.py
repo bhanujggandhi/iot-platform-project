@@ -19,6 +19,7 @@ async def healthcheck():
 async def createNode(item: Report):
     return {"status": "Node Manager contacted"}
 
+
 @app.post("/upscale/")
 async def upscaleNode(item: Report):
     return {"status": "Node Manager has upscaled the vm"}

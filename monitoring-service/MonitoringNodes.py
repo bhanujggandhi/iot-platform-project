@@ -30,10 +30,9 @@ def scale_nodes(NodeInfoCollection, MIN_LOAD, MAX_LOAD, TIME_INTERVAL):
     ]
 
     while True:
-
         result = NodeInfoCollection.aggregate(pipeline_for_avg_usage).next()
         avg_cpu_usage, avg_mem_usage = result["avg_cpu_usage"], result["avg_mem_usage"]
-        print(f'avg cpu usage : {avg_cpu_usage}, avg memory usage : {avg_mem_usage}')
+        print(f"avg cpu usage : {avg_cpu_usage}, avg memory usage : {avg_mem_usage}")
 
         if avg_cpu_usage > MAX_LOAD or avg_mem_usage > MAX_LOAD:
             url = NODE_MANAGER_API + "upscale"
@@ -52,16 +51,13 @@ def scale_nodes(NodeInfoCollection, MIN_LOAD, MAX_LOAD, TIME_INTERVAL):
             ip, port = node_with_min_cpu_usage["ip"], node_with_min_cpu_usage["port"]
             address = f"{ip}:{port}"
 
-            updated_result = NodeInfoCollection.find_one_and_update({
-                "ip" : ip,
-                "port" : port
-            }, {
-                '$set' : { 
-                    "serverStatus" : 0
-                }
-            })
+            updated_result = NodeInfoCollection.find_one_and_update(
+                {"ip": ip, "port": port}, {"$set": {"serverStatus": 0}}
+            )
 
-            print(f'Node with ip : {updated_result["ip"]}, port : {updated_result["port"]} has been marked for downscaling(serverStatus : 0)')
+            print(
+                f'Node with ip : {updated_result["ip"]}, port : {updated_result["port"]} has been marked for downscaling(serverStatus : 0)'
+            )
 
             req = {"serviceName": address}
             res = requests.post(url, json=req).json()
@@ -70,7 +66,7 @@ def scale_nodes(NodeInfoCollection, MIN_LOAD, MAX_LOAD, TIME_INTERVAL):
         else:
             print("Everything Fine")
 
-        sleep(1) #As of now running script every second
+        sleep(1)  # As of now running script every second
 
 
 if __name__ == "__main__":

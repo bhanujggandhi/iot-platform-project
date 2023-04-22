@@ -83,7 +83,9 @@ class Consume:
             value = msg.value().decode("utf-8")
             if msg.headers():
                 for header in msg.headers():
-                    print("Header key: {}, Header value: {}".format(header[0], header[1]))
+                    print(
+                        "Header key: {}, Header value: {}".format(header[0], header[1])
+                    )
             return {"status": True, "key": key, "value": value}
 
 
@@ -97,7 +99,9 @@ def deploy_app(appname: str, appid: str, userid: str):
     collection.create_index("name", unique=True)
     user_collection = db.User
     app_collection = db.App
-    curr_app = app_collection.find_one({"_id": ObjectId(appid), "user": ObjectId(userid)})
+    curr_app = app_collection.find_one(
+        {"_id": ObjectId(appid), "user": ObjectId(userid)}
+    )
     curr_user = user_collection.find_one({"_id": ObjectId(userid)})
 
     if not curr_app:
@@ -150,7 +154,9 @@ def stop_app(appname: str, appid: str, userid: str):
     cmd = f"docker stop {appname}"
     os.system(cmd)
     data = {"active": False}
-    collection.find_one_and_update({"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data})
+    collection.find_one_and_update(
+        {"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data}
+    )
     return data
 
 
@@ -164,7 +170,9 @@ def start_app(appname: str, appid: str, userid: str):
     cmd = f"docker start {appname}"
     os.system(cmd)
     data = {"active": True}
-    collection.find_one_and_update({"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data})
+    collection.find_one_and_update(
+        {"_id": ObjectId(appid), "user": ObjectId(userid)}, {"$set": data}
+    )
     return data
 
 
@@ -266,7 +274,10 @@ def start_node(service: str):
     collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
-        return {"status": "False", "msg": "Node is not in our database, please create one"}
+        return {
+            "status": "False",
+            "msg": "Node is not in our database, please create one",
+        }
     cmd = f"docker stop {service}"
     os.system(cmd)
     cmd = f"docker rmi {service}"
@@ -286,7 +297,10 @@ def remove_node(service: str):
     collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
-        return {"status": "False", "msg": "Node is not in our database, please create one"}
+        return {
+            "status": "False",
+            "msg": "Node is not in our database, please create one",
+        }
     cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     cmd = f"docker rmi {service}"
@@ -299,7 +313,10 @@ def stop_node(service: str):
     collection = db.Service
     active = collection.find_one({"name": service})
     if not active:
-        return {"status": "False", "msg": "Node is not in our database, please create one"}
+        return {
+            "status": "False",
+            "msg": "Node is not in our database, please create one",
+        }
     cmd = f"docker stop {service} && docker rm {service}"
     os.system(cmd)
     data = {"active": False}
@@ -316,7 +333,12 @@ service_func = {
     "destroy": destroy,
 }
 
-app_func = {"deploy": deploy_app, "start": start_app, "stop": stop_app, "remove": remove_app}
+app_func = {
+    "deploy": deploy_app,
+    "start": start_app,
+    "stop": stop_app,
+    "remove": remove_app,
+}
 
 produce = Produce()
 
@@ -331,16 +353,28 @@ def utilise_message(value):
         appid = value["appid"]
         userid = value["userid"]
     except:
-        message = {"src": TOPIC, "status": "False", "msg": "Message format is not correct"}
+        message = {
+            "src": TOPIC,
+            "status": "False",
+            "msg": "Message format is not correct",
+        }
         produce.push(src, "", json.dumps(message))
         return
 
     if service == "" and appname == "":
-        message = {"src": TOPIC, "status": "False", "msg": "No valid service or app provided"}
+        message = {
+            "src": TOPIC,
+            "status": "False",
+            "msg": "No valid service or app provided",
+        }
         produce.push(src, "", json.dumps(message))
     if service != "":
         if operation not in service_func.keys():
-            message = {"src": TOPIC, "status": "False", "msg": f"No valid operation provided for the {service}"}
+            message = {
+                "src": TOPIC,
+                "status": "False",
+                "msg": f"No valid operation provided for the {service}",
+            }
             produce.push(src, "", json.dumps(message))
         else:
             if operation == "init" or operation == "destroy":
@@ -352,7 +386,11 @@ def utilise_message(value):
             produce.push(src, "", json.dumps(message))
     if appname != "":
         if operation not in app_func.keys():
-            message = {"src": TOPIC, "status": "False", "msg": f"No valid operation provided for the {appname}"}
+            message = {
+                "src": TOPIC,
+                "status": "False",
+                "msg": f"No valid operation provided for the {appname}",
+            }
             produce.push(src, "", json.dumps(message))
             print(message)
         else:

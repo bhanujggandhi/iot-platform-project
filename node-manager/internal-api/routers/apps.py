@@ -83,7 +83,9 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())]):
 
 
 @router.post("/register", dependencies=[Depends(JWTBearer())])
-async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: AppRegister = Body(...)):
+async def register_new_app(
+    token: Annotated[str, Depends(JWTBearer())], app: AppRegister = Body(...)
+):
     try:
         curr_user = decodeJWT(token)
 
@@ -103,7 +105,11 @@ async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: App
             }
         )
 
-        payload = {"id": str(result.inserted_id), "user": curr_user["id"], "token": "app"}
+        payload = {
+            "id": str(result.inserted_id),
+            "user": curr_user["id"],
+            "token": "app",
+        }
 
         return {
             "status_code": 200,
@@ -116,9 +122,14 @@ async def register_new_app(token: Annotated[str, Depends(JWTBearer())], app: App
 @router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appid, "user": ObjectId(curr_user["id"])})
+    curr_app = app_collection.find_one(
+        {"name": appid, "user": ObjectId(curr_user["id"])}
+    )
     if not curr_app:
-        return {"status": 404, "data": f"We have no app deployed in the name of {appid}"}
+        return {
+            "status": 404,
+            "data": f"We have no app deployed in the name of {appid}",
+        }
 
     if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}
@@ -138,9 +149,14 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
 @router.post("/{appid}/start", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appname, "user": ObjectId(curr_user["id"])})
+    curr_app = app_collection.find_one(
+        {"name": appname, "user": ObjectId(curr_user["id"])}
+    )
     if not curr_app:
-        return {"status": 404, "data": f"We have no app deployed in the name of {appname}"}
+        return {
+            "status": 404,
+            "data": f"We have no app deployed in the name of {appname}",
+        }
 
     if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}
@@ -162,9 +178,14 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str
 @router.post("/{appid}/remove", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
-    curr_app = app_collection.find_one({"name": appname, "user": ObjectId(curr_user["id"])})
+    curr_app = app_collection.find_one(
+        {"name": appname, "user": ObjectId(curr_user["id"])}
+    )
     if not curr_app:
-        return {"status": 404, "data": f"We have no app deployed in the name of {appname}"}
+        return {
+            "status": 404,
+            "data": f"We have no app deployed in the name of {appname}",
+        }
 
     if str(curr_app["user"]) != curr_user["id"]:
         return {"status": 401, "data": f"You are not authorized to do that"}

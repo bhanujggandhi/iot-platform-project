@@ -13,7 +13,11 @@ notification = Notification()
 # utilising message as per need
 def utilise_message(value):
     value = json.loads(value)
-    receiver_email, subject, body = value["receiver_email"], value["subject"], value["body"]
+    receiver_email, subject, body = (
+        value["receiver_email"],
+        value["subject"],
+        value["body"],
+    )
     # print(receiver_email, subject, body)
     notification.notify(receiver_email, subject, body)
 

@@ -8,12 +8,11 @@ from pymongo import MongoClient
 import time
 import threading
 
-Headers = {'X-M2M-Origin': 'admin:admin',
-           'Content-Type': 'application/json;ty=4'}
+Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
 
 
-mongoKey = config('mongoKey')
-fetchAPI = config('Om2mFetchAPI')
+mongoKey = config("mongoKey")
+fetchAPI = config("Om2mFetchAPI")
 
 
 def processData(data):
@@ -60,26 +59,32 @@ def SensorData(freq=1, datathreshold=1000):
             # print(sensors)
             sensorIds = getSensorID(sensors)
 
-
             for i in sensors:
                 if collection.count_documents({"sensorType": i}) == 0:
                     collection.insert_one(
-                        {"sensorType": i, "data": sensorData[i], "sensorID": sensorIds[i]})
+                        {
+                            "sensorType": i,
+                            "data": sensorData[i],
+                            "sensorID": sensorIds[i],
+                        }
+                    )
                 else:
                     # append the data to the existing sensor type
-                    currData = collection.find_one(
-                        {"sensorType": i})["data"]
+                    currData = collection.find_one({"sensorType": i})["data"]
                     # print(currData, type(currData))
                     currData.extend(sensorData[i])
-                    collection.update_one({"sensorType": i}, {
-                        "$set": {"data": currData}})
+                    collection.update_one(
+                        {"sensorType": i}, {"$set": {"data": currData}}
+                    )
 
             for i in sensors:
                 data = collection.find_one({"sensorType": i})["data"]
                 if len(data) > datathreshold:
                     data = data[-datathreshold:]
-                collection.update_one({'_id': collection.find_one(
-                    {"sensorType": i})['_id']}, {'$set': {'data': data}})
+                collection.update_one(
+                    {"_id": collection.find_one({"sensorType": i})["_id"]},
+                    {"$set": {"data": data}},
+                )
 
         else:
             print("Error: ", res.status_code)

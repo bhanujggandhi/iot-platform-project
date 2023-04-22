@@ -12,7 +12,7 @@ class DataBase:
         self.collection = None
 
     def connect(self):
-        mongoKey = config('mongoKey')
+        mongoKey = config("mongoKey")
         self.client = pymongo.MongoClient(mongoKey)
 
     def create_db(self, db_name: str):
@@ -42,9 +42,16 @@ class DataBase:
         return dumps(list(self.collection.find()))
 
     def join(self, fromCollection, localField, foreignField):
-        result = self.collection.aggregate([
-            {
-                '$lookup': {'from': f'{fromCollection}', 'localField': f'{localField}', 'foreignField': f'{foreignField}', 'as': 'results'}
-            }
-        ])
+        result = self.collection.aggregate(
+            [
+                {
+                    "$lookup": {
+                        "from": f"{fromCollection}",
+                        "localField": f"{localField}",
+                        "foreignField": f"{foreignField}",
+                        "as": "results",
+                    }
+                }
+            ]
+        )
         return dumps(list(result))

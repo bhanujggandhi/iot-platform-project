@@ -1,10 +1,12 @@
 import pymongo
+
 # from decouple import config
 
 # Set up a MongoDB client
 # mongoKey = config('mongoKey')
 client = pymongo.MongoClient(
-    "mongodb+srv://admin:admin@cluster0.ybcfbgy.mongodb.net/?retryWrites=true&w=majority")
+    "mongodb+srv://admin:admin@cluster0.ybcfbgy.mongodb.net/?retryWrites=true&w=majority"
+)
 
 # # Define a list of databases and collections to create
 # dbs_and_collections = [
@@ -60,43 +62,49 @@ client = pymongo.MongoClient(
 #     }
 
 userCollectionSchema = {
-    '$jsonSchema': {
-        'bsonType': 'object',
-        'required': ['developerId', 'developerName', 'Role', 'email', 'password', 'Appids'],
-        'properties': {
-            'developerId': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+            "developerId",
+            "developerName",
+            "Role",
+            "email",
+            "password",
+            "Appids",
+        ],
+        "properties": {
+            "developerId": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'developerName': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+            "developerName": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'Role': {
-                'enum': ['AppAdmin', 'AppDeveloper', 'PlatformAdmin'],
-                'description': 'can only be one of the enum values and is required'
+            "Role": {
+                "enum": ["AppAdmin", "AppDeveloper", "PlatformAdmin"],
+                "description": "can only be one of the enum values and is required",
             },
-            'email': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+            "email": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'password': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+            "password": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'Appids': {
-                'bsonType': 'array',
-                'description': 'must be an array and is required',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string if the field is present'
-                }
-            }
-        }
+            "Appids": {
+                "bsonType": "array",
+                "description": "must be an array and is required",
+                "items": {
+                    "bsonType": "string",
+                    "description": "must be a string if the field is present",
+                },
+            },
+        },
     }
-
 }
-db = client['ActiveNodeDB']
+db = client["ActiveNodeDB"]
 
 # collection = db.create_collection("userCollection", validator=uservalidator)
 # modify the validator for the userCollection collection
@@ -118,53 +126,49 @@ db = client['ActiveNodeDB']
 # })
 
 ActiveNodeScema = {
-    '$jsonSchema': {
-        'bsonType': 'object',
-        'required': ['VMid', 'IP', 'Port', 'CPU', 'Memory', 'OtherStats'],
-        'properties': {
-            'VMid': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["VMid", "IP", "Port", "CPU", "Memory", "OtherStats"],
+        "properties": {
+            "VMid": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'IP': {
-                'bsonType': 'string',
-                'description': 'must be a string and is required'
+            "IP": {
+                "bsonType": "string",
+                "description": "must be a string and is required",
             },
-            'Port': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
+            "Port": {"bsonType": "int", "description": "must be a int and is required"},
+            "CPU": {"bsonType": "int", "description": "must be a int and is required"},
+            "Memory": {
+                "bsonType": "int",
+                "description": "must be a int and is required",
             },
-            'CPU': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
+            "OtherStats": {
+                "bsonType": "array",
+                "description": "must be an array and is required",
+                "items": {
+                    "bsonType": "string",
+                    "description": "must be a string if the field is present",
+                },
             },
-            'Memory': {
-                'bsonType': 'int',
-                'description': 'must be a int and is required'
-            },
-            'OtherStats': {
-                'bsonType': 'array',
-                'description': 'must be an array and is required',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string if the field is present'
-                }
-            }
-        }
+        },
     }
-
 }
 
 
 activeNodeCollection = db.create_collection(
-    "activeNodeCollection", validator=ActiveNodeScema)
+    "activeNodeCollection", validator=ActiveNodeScema
+)
 
 print("Inserting One :")
-activeNodeCollection.insert_one({
-    "VMid": "1234",
-    "IP": "192.168.172.134",
-    "Port": 1234,
-    'CPU': 12,
-    'Memory': 123,
-    'OtherStats': ["12", "321"]
-})
+activeNodeCollection.insert_one(
+    {
+        "VMid": "1234",
+        "IP": "192.168.172.134",
+        "Port": 1234,
+        "CPU": 12,
+        "Memory": 123,
+        "OtherStats": ["12", "321"],
+    }
+)

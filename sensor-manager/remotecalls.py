@@ -77,7 +77,9 @@ def validateStartTime(startTime):
         return False
 
 
-def get_sensor_data(readingType="", startTime="", numofSensor=1, latitude="", longitude=""):
+def get_sensor_data(
+    readingType="", startTime="", numofSensor=1, latitude="", longitude=""
+):
     sensorIDs = []
     if "lat" != "" and "long" != "":
         db = client["SensorDB"]
@@ -112,7 +114,9 @@ def get_sensor_data(readingType="", startTime="", numofSensor=1, latitude="", lo
 
 
 def main():
-    data = get_sensor_data("Flowrate", "2023-04-1T20:26:20Z", 2, "17.445402", "78.349875")
+    data = get_sensor_data(
+        "Flowrate", "2023-04-1T20:26:20Z", 2, "17.445402", "78.349875"
+    )
     print(data)
 
 

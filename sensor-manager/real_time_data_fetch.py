@@ -19,12 +19,12 @@ minutes = 0.2
 #     config = json.load(f)
 #     mongoKey = config['mongoKey']
 
-with open('data.json', 'w') as f:
+with open("data.json", "w") as f:
     json_str = json.dumps({"data": []})
     f.write(json_str)
 
-mongoKey = config('mongoKey')
-fetchAPI = config('Om2mFetchAPI')
+mongoKey = config("mongoKey")
+fetchAPI = config("Om2mFetchAPI")
 
 
 @app.get("/fetch_realtime_data")
@@ -44,9 +44,9 @@ async def get():
 
             response = json.loads(response)
             print(response)
-            data['data'].extend(response['data'])
-            print(len(data['data']))
-            with open('data.json', 'w') as f:
+            data["data"].extend(response["data"])
+            print(len(data["data"]))
+            with open("data.json", "w") as f:
                 json_str = json.dumps(data)
                 f.write(json_str)
 
@@ -80,10 +80,10 @@ async def websocket_endpoint(websocket: WebSocket):
         cursor = collection.find(sensor)
         data = []
         for record in cursor:
-            for i in range(len(record['data'])):
+            for i in range(len(record["data"])):
                 # print(record['data'][i])
-                li = json.loads(record['data'][i])
-                if (int(li[0]) > lastStoredTimestamp):
+                li = json.loads(record["data"][i])
+                if int(li[0]) > lastStoredTimestamp:
                     data.append((int(li[0]), int(li[-1])))
                     lastStoredTimestamp = int(li[0])
             if len(data) > 0:

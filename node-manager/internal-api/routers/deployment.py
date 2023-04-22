@@ -51,7 +51,9 @@ async def schedule_deployement_task(time: int, filename, userid="", appid=""):
 
 @router.post("/", dependencies=[Depends(JWTBearer())])
 async def upload_zip_file(
-    background_tasks: BackgroundTasks, token: Annotated[str, Depends(JWTBearer())], file: UploadFile = File(...)
+    background_tasks: BackgroundTasks,
+    token: Annotated[str, Depends(JWTBearer())],
+    file: UploadFile = File(...),
 ):
     """
     Api to server upload zip file requets in order for developer to deploy
@@ -75,7 +77,9 @@ async def upload_zip_file(
 
     # Check filetype
     if file.content_type != "application/zip":
-        raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
+        raise HTTPException(
+            400, detail="Only Zip file with proper directory structure is allowed"
+        )
 
     # Copy file to local disk
     with open(f"{file.filename}", "wb") as f:
@@ -121,14 +125,24 @@ async def upload_zip_file(
             produce.push("topic_node_manager", "", json.dumps(message))
         else:
             background_tasks.add_task(
-                schedule_deployement_task, int(sched["schedule"]["time"]), fname, curr_user["id"], str(exist["_id"])
+                schedule_deployement_task,
+                int(sched["schedule"]["time"]),
+                fname,
+                curr_user["id"],
+                str(exist["_id"]),
             )
         os.system(f"rm -rf ./verify/{file.filename}")
         os.system(f"rm -rf ./{file.filename}")
-        return {"status": "True", "msg": "File is deploying safely. Please check back after 5 minutes"}
+        return {
+            "status": "True",
+            "msg": "File is deploying safely. Please check back after 5 minutes",
+        }
     else:
         os.remove(file.filename)
-        raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
+        raise HTTPException(
+            400,
+            detail="Zip file does not follow the directory structure. Please refer the doc",
+        )
 
 
 @router.post("/schedule", dependencies=[Depends(JWTBearer())])
@@ -141,7 +155,9 @@ async def schedule_task(
     curr_user = decodeJWT(token)
     # Check filetype
     if file.content_type != "application/zip":
-        raise HTTPException(400, detail="Only Zip file with proper directory structure is allowed")
+        raise HTTPException(
+            400, detail="Only Zip file with proper directory structure is allowed"
+        )
 
     # Copy file to local disk
     with open(f"{file.filename}", "wb") as f:
@@ -169,8 +185,13 @@ async def schedule_task(
             # Upload to the cloud
             status = uploadFile(CONTAINER_NAME, ".", file.filename)
 
-        background_tasks.add_task(schedule_deployement_task, time, file, curr_user["id"])
+        background_tasks.add_task(
+            schedule_deployement_task, time, file, curr_user["id"]
+        )
         return {"message": "Task scheduled", "status": json.dumps(status)}
     else:
         os.remove(file.filename)
-        raise HTTPException(400, detail="Zip file does not follow the directory structure. Please refer the doc")
+        raise HTTPException(
+            400,
+            detail="Zip file does not follow the directory structure. Please refer the doc",
+        )

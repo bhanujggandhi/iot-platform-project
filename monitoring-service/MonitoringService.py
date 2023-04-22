@@ -42,7 +42,7 @@ MY_TOPIC = "topic_monitoring"
 TOPIC_NOTIFICATION = "topic_notification"
 SERVICE_NAME = "monitoring-service"
 produce = Produce()  # Instantiate Kafka producer
-logger = Logger()   # Instantiate logger
+logger = Logger()  # Instantiate logger
 
 # module information
 MODULE_LIST = []  # modules which uses kafka
@@ -73,8 +73,7 @@ def get_service_info(config_file):
         print(f"Configuration file not found: {config_file}")
         return {}, []
     except json.JSONDecodeError as e:
-        print(
-            f"Failed to decode configuration file: {config_file}. Error: {e}")
+        print(f"Failed to decode configuration file: {config_file}. Error: {e}")
         return {}, []
 
 
@@ -90,8 +89,7 @@ def store_health_status(module_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to store health status for module '{module_name}'")
+        print(f"Error: {e}. Failed to store health status for module '{module_name}'")
 
 
 # Function to store app health status in MongoDB
@@ -103,8 +101,7 @@ def store_app_health_status(app_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         app_status_collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to store health status for app '{app_name}'")
+        print(f"Error: {e}. Failed to store health status for app '{app_name}'")
 
 
 # Function to get last update timestamp of a specific module from MongoDB
@@ -119,8 +116,10 @@ def get_last_update_timestamp(module_name):
             return None
     except Exception as e:
         print(
-            f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
+            f"Error: {e}. Failed to get last update timestamp for module '{module_name}'"
+        )
         return None
+
 
 # Function to get last update timestamp of a specific app from MongoDB
 
@@ -135,14 +134,14 @@ def get_app_last_update_timestamp(app_name):
         else:
             return None
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        print(f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
         return None
 
 
 # get list of all the active apps.
 def getAppData():
     return list(app_collection.find({"active": True}))
+
 
 # return the mail id of developer associated with the app.
 def get_developer_mailid(app_name):
@@ -153,7 +152,8 @@ def get_developer_mailid(app_name):
         app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
-            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.")
+            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection."
+        )
         return None
 
     try:
@@ -175,45 +175,48 @@ def get_developer_mailid(app_name):
             developer_mailid = str(document["email"])
             developer_name = str(document["name"])
         else:
-            print(
-                f"No user found with id '{developer_id}' in User collection.")
+            print(f"No user found with id '{developer_id}' in User collection.")
             return None
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        print(f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
         return None
 
-    return developer_mailid,developer_name
+    return developer_mailid, developer_name
+
 
 # send notification to developer if app crashed.
 def notify_to_developer(app_name):
     try:
-        developer_mailid,developer_name = get_developer_mailid(app_name)
+        developer_mailid, developer_name = get_developer_mailid(app_name)
         if not developer_mailid:
             print(
-                f"Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+                f"Could not retrieve developer email for app '{app_name}'. Notification not sent."
+            )
             return False
     except Exception as e:
         print(
-            f"Error: {e}. Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+            f"Error: {e}. Could not retrieve developer email for app '{app_name}'. Notification not sent."
+        )
         return False
 
     subject = f"URGENT Your app '{app_name}' has crashed!"
     body = f"Dear '{developer_name}',We regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
-    message = {"receiver_email": developer_mailid,
-              "subject": subject, "body": body}
+    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
 
     try:
         produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
         print(
-            f"Notification sent to developer '{developer_mailid}' for app '{app_name}'.")
+            f"Notification sent to developer '{developer_mailid}' for app '{app_name}'."
+        )
         return True
     except Exception as e:
         print(
-            f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'.")
+            f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'."
+        )
         return False
+
 
 # **********************************| Communication with Modules |***********************************
 
@@ -286,8 +289,11 @@ def postHealthCheck():
                 topic_name = SERVICES[Module]["topic_name"]
 
                 # needs to decide what message format will be..
-                message = {"to": topic_name, "src": "topic_monitoring",
-                           "data": {"operation": "health", "module": Module}}
+                message = {
+                    "to": topic_name,
+                    "src": "topic_monitoring",
+                    "data": {"operation": "health", "module": Module},
+                }
                 produce.push(topic_name, key, json.dumps(message))
         except KeyError as e:
             print(f"KeyError: {e}. Failed to post health check message.")
@@ -315,17 +321,17 @@ def getHealthStatus():
                 # print(resp["key"], resp["value"])
                 value = json.loads(resp["value"])
                 # Extract module name and timestamp from the message
-                module_name = value['data']['module']
-                timestamp = value['data']['timestamp']
+                module_name = value["data"]["module"]
+                timestamp = value["data"]["timestamp"]
 
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
-                    store_health_status(
-                        module_name, float(timestamp), "active")
+                    store_health_status(module_name, float(timestamp), "active")
                 else:
                     print(
-                        "Error: Required fields are missing in the health status message.")
+                        "Error: Required fields are missing in the health status message."
+                    )
         except KeyError as e:
             print(f"Error: {e}. Failed to get health status.")
         except Exception as e:
@@ -350,41 +356,52 @@ def timeOutTracker():
             # Iterate through the list of modules
             for module_name in MODULE_LIST:
                 try:
-                    last_update_timestamp = get_last_update_timestamp(
-                        module_name)
+                    last_update_timestamp = get_last_update_timestamp(module_name)
 
-                    if last_update_timestamp and (current_timestamp - last_update_timestamp) > TIMEOUT_THRESHOLD:
+                    if (
+                        last_update_timestamp
+                        and (current_timestamp - last_update_timestamp)
+                        > TIMEOUT_THRESHOLD
+                    ):
                         # Take action and send notification to admin
                         print(
-                            f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
+                            f"Module '{module_name}' has not responded for a long time! Notification sent to admin.."
+                        )
                         store_health_status(
-                            module_name, last_update_timestamp, "inactive")
+                            module_name, last_update_timestamp, "inactive"
+                        )
                         """
                         TO DO : some more action when required
                         """
                 except Exception as e:
                     print(
-                        f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
+                        f"Error: {e}. Failed to monitor module '{module_name}' for timeout."
+                    )
                     # Continue to the next module in case of any error
                     continue
 
             # Iterate through the list of apps
             for app_name in getAppData():
                 try:
-                    last_update_timestamp = get_app_last_update_timestamp(
-                        app_name)
+                    last_update_timestamp = get_app_last_update_timestamp(app_name)
 
-                    if last_update_timestamp and (
-                            current_timestamp - last_update_timestamp) > TIMEOUT_THRESHOLD:
+                    if (
+                        last_update_timestamp
+                        and (current_timestamp - last_update_timestamp)
+                        > TIMEOUT_THRESHOLD
+                    ):
                         # Take action and send notification to admin/dev
                         print(
-                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..")
+                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev.."
+                        )
                         store_app_health_status(
-                            app_name, last_update_timestamp, "inactive")
+                            app_name, last_update_timestamp, "inactive"
+                        )
                         notify_to_developer(app_name)
                 except Exception as e:
                     print(
-                        f"Error: {e}. Failed to monitor app '{app_name}' for timeout.")
+                        f"Error: {e}. Failed to monitor app '{app_name}' for timeout."
+                    )
                     # Continue to the next app in case of any error
                     continue
 
@@ -401,10 +418,10 @@ if __name__ == "__main__":
     SERVICES, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
     # Create a producer to send healthcheck request at regular intervals and update the timeout queue
     producer_thread = threading.Thread(target=postHealthCheck, args=())
-    
+
     # Create a consumer to consume the message and update the timeout queue
     consumer_thread = threading.Thread(target=getHealthStatus, args=())
-    
+
     # Create a thread for app healthcheck  at regular intervals and update the timeout queue
     appHealth_thread = threading.Thread(target=appHealthCheck, args=())
 
