@@ -56,7 +56,7 @@ Example Output from fetchdata function:
 | ------------- | ---------------------------- |
 | WM-WF-PH03-00 | Water Quality                |
 | SL-VN03-00    | Solar Monitoring             |
-| WM-WF-PH03-00 | Smart Room Energy Monitoring |
+| SR-EM-KH04-00 | Smart Room Energy Monitoring |
 
 - All the Fields are optional, if not passed then default values are used.
 
