@@ -3,6 +3,7 @@ import os
 import socket
 import zipfile
 from typing import Union
+import time
 
 import uvicorn
 from bson import ObjectId
@@ -345,6 +346,27 @@ produce = Produce()
 
 def utilise_message(value):
     value = json.loads(value)
+    print(value)
+    if "to" in value.keys() and "src" in value.keys() and "data" in value.keys():
+        if value["src"] == "topic_monitoring":
+            try:
+                data = {"timestamp": time.time(), "module": value["data"]["module"]}
+                key = ""
+                message = {"to": value["src"], "src": value["to"], "data": data}
+                produce.push(value["src"], key, json.dumps(message))
+
+                msg = f"Replied to Monitoring Service for Health Checkup Request with timestamp : {data['timestamp']}."
+                print(msg)
+                return
+            except Exception as e:
+                print(e)
+                msg = f"Invalid Arguments found while consuming from Kafka Topic : {TOPIC}."
+                print(msg)
+                return
+        else:
+            msg = f"Invalid Arguments found while consuming from Kafka Topic : {TOPIC}."
+            print(msg)
+            return
     try:
         src = value["src"]
         service = value["service"]

@@ -15,6 +15,7 @@ MONITORING SERVICE:
     levels = {0-DEBUG, 1-INFO, 2-WARNING, 3-ERROR, 4-CRITICAL]
     logger.log(service_name = SERVICE_NAME, level = 1, msg = ' < msg > ')
     logger.log(service_name = SERVICE_NAME, level = 1, msg = ' < msg > ', app_name = <app_name>, user_id = <developer_id>)
+    
 """
 import json
 import threading
@@ -28,14 +29,14 @@ from pymongo import MongoClient
 from Messenger import Consume, Produce
 from logger_utils import Logger
 
-PRODUCER_SLEEP_TIME = 3
-CONSUMER_SLEEP_TIME = 2
-API_SLEEP_TIME = 5
+PRODUCER_SLEEP_TIME = 10
+CONSUMER_SLEEP_TIME = 1
+API_SLEEP_TIME = 10
 MAIN_SLEEP_TIME = 1
-TRACKING_INTERVAL = 10
-TIMEOUT_THRESHOLD = 30
+TRACKING_INTERVAL = 20
+TIMEOUT_THRESHOLD = 60
 IP = "127.0.0.1"
-PORT = "5001"
+PORT = "8000"
 
 # kafka topics and other related info.
 MY_TOPIC = "topic_monitoring"
@@ -46,7 +47,7 @@ logger = Logger()  # Instantiate logger
 
 # module information
 MODULE_LIST = []  # modules which uses kafka
-API_MODULE_LIST = ["internal-api"]  # modules which are not using kafka
+API_MODULE_LIST = []  # modules which are not using kafka
 CONFIG_FILE_PATH = "./topic_info.json"
 SERVICES = []
 
@@ -370,6 +371,7 @@ def apiHealthCheck():
                 timestamp = response_dict["time_stamp"]
                 # Store module health status in MongoDB
                 store_health_status(module_name, float(timestamp), "active")
+                return response_dict
 
             except Exception as e:
                 print(f"Error {e} in apiHealthCheck().")
@@ -378,6 +380,7 @@ def apiHealthCheck():
                     level=3,
                     msg=f"Error {e} in apiHealthCheck().",
                 )
+                return dict()
 
         time.sleep(API_SLEEP_TIME)
 
@@ -526,7 +529,6 @@ def timeOutTracker():
 
             # Iterate through the list of apps
             for app_name in getAppData():
-                print(app_name)
                 try:
                     last_update_timestamp = get_app_last_update_timestamp(app_name)
 
@@ -591,7 +593,7 @@ if __name__ == "__main__":
     appHealth_thread = threading.Thread(target=appHealthCheck, args=())
 
     # Create a thread for Api healthcheck  at regular intervals and update the timeout queue
-    apiHealth_thread = threading.Thread(target=apiHealthCheck, args=())
+    # apiHealth_thread = threading.Thread(target=apiHealthCheck, args=())
 
     time.sleep(TRACKING_INTERVAL)
     # Create a timeout tracker to keep track of the values in the timeout queue
@@ -601,7 +603,7 @@ if __name__ == "__main__":
     producer_thread.start()
     appHealth_thread.start()
     consumer_thread.start()
-    apiHealth_thread.start()
+    # apiHealth_thread.start()
     tracker_thread.start()
 
     try:
@@ -613,5 +615,5 @@ if __name__ == "__main__":
         producer_thread.join()
         consumer_thread.join()
         appHealth_thread.join()
-        apiHealth_thread.join()
+        # apiHealth_thread.join()
         tracker_thread.join()
