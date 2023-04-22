@@ -22,11 +22,12 @@ import threading
 import time
 
 import requests
+from bson import ObjectId
 from decouple import config
 from pymongo import MongoClient
-from logger_utils import Logger
-from bson import ObjectId
+
 from Messenger import Consume, Produce
+from logger_utils import Logger
 
 PRODUCER_SLEEP_TIME = 3
 CONSUMER_SLEEP_TIME = 2
@@ -71,13 +72,17 @@ def get_service_info(config_file):
             return response, Module_list
     except FileNotFoundError as e:
         print(f"Configuration file not found: {config_file}")
+        logger.log(service_name=SERVICE_NAME, level=3, msg=f"Configuration file not found: {config_file}")
         return {}, []
     except json.JSONDecodeError as e:
-        print(f"Failed to decode configuration file: {config_file}. Error: {e}")
+        print(
+            f"Failed to decode configuration file: {config_file}. Error: {e}")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Failed to decode configuration file: {config_file}. Error: {e}")
         return {}, []
 
 
-# **********************************|    Dealing with Mongo    |***********************************
+# *******************************|    Dealing with Mongo    |******************************
 
 
 # Function to store module health status in MongoDB
@@ -89,7 +94,10 @@ def store_health_status(module_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to store health status for module '{module_name}'")
+        print(
+            f"Error: {e}. Failed to store health status for module '{module_name}'")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to store health status for module '{module_name}'")
 
 
 # Function to store app health status in MongoDB
@@ -101,7 +109,11 @@ def store_app_health_status(app_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         app_status_collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to store health status for app '{app_name}'")
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}'")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to store health status for app '{app_name}'", app_name=app_name,
+                   user_id=get_developer_mailid(app_name)[0])
 
 
 # Function to get last update timestamp of a specific module from MongoDB
@@ -116,14 +128,13 @@ def get_last_update_timestamp(module_name):
             return None
     except Exception as e:
         print(
-            f"Error: {e}. Failed to get last update timestamp for module '{module_name}'"
-        )
+            f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to get last update timestamp for module '{module_name}'")
         return None
 
 
 # Function to get last update timestamp of a specific app from MongoDB
-
-
 def get_app_last_update_timestamp(app_name):
     try:
         # Query MongoDB to get the latest document of the specific module based on module_name field
@@ -134,7 +145,11 @@ def get_app_last_update_timestamp(app_name):
         else:
             return None
     except Exception as e:
-        print(f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        print(
+            f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to get last update timestamp for app '{app_name}'", app_name=app_name,
+                   user_id=get_developer_mailid(app_name)[0])
         return None
 
 
@@ -142,6 +157,17 @@ def get_app_last_update_timestamp(app_name):
 def getAppData():
     return list(app_collection.find({"active": True}))
 
+# init Module_Status and App_Status collection in MongoDb
+def init_ModuleStatus_AppStatus():
+    for module in MODULE_LIST:
+        store_health_status(module, time.time(), "active")
+    
+    for module in API_MODULE_LIST:
+        store_health_status(module, time.time(), "active")
+    
+    app_list = getAppData()
+    for app in app_list:
+        store_app_health_status(app["name"], time.time(), "active")
 
 # return the mail id of developer associated with the app.
 def get_developer_mailid(app_name):
@@ -152,22 +178,26 @@ def get_developer_mailid(app_name):
         app_collection.update_one(filter, update, upsert=True)
     except Exception as e:
         print(
-            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection."
-        )
+            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.",
+                   app_name=app_name)
         return None
-
     try:
         # Get developer id from App collection associated with this app.
         document = app_collection.find_one({"name": app_name})
         if document:
-            developer_id = str(document["developer"])
+            developer_id = document["user"]
         else:
             print(f"No app found with name '{app_name}' in App collection.")
+            logger.log(service_name=SERVICE_NAME, level=2,
+                       msg=f"No app found with name '{app_name}' in App collection.", app_name=app_name, user_id=developer_id)
             return None
     except Exception as e:
         print(f"Error: {e}. Failed to get developer id for '{app_name}' app.")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to get developer id for '{app_name}' app.", app_name=app_name, user_id=developer_id)
         return None
-
     try:
         # Get developer mail id from User collection.
         document = user_collection.find_one({"_id": ObjectId(developer_id)})
@@ -175,10 +205,16 @@ def get_developer_mailid(app_name):
             developer_mailid = str(document["email"])
             developer_name = str(document["name"])
         else:
-            print(f"No user found with id '{developer_id}' in User collection.")
+            print(
+                f"No user found with id '{developer_id}' in User collection.")
+            logger.log(service_name=SERVICE_NAME, level=2,
+                       msg=f"No user found with id '{developer_id}' in User collection.")
             return None
     except Exception as e:
-        print(f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        print(
+            f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to get developer mail id for '{app_name}' app.", app_name=app_name, user_id=developer_id)
         return None
 
     return developer_mailid, developer_name
@@ -190,35 +226,44 @@ def notify_to_developer(app_name):
         developer_mailid, developer_name = get_developer_mailid(app_name)
         if not developer_mailid:
             print(
-                f"Could not retrieve developer email for app '{app_name}'. Notification not sent."
-            )
+                f"Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+            logger.log(service_name=SERVICE_NAME, level=3,
+                       msg=f"Could not retrieve developer email for app '{app_name}'. Notification not sent.",
+                       app_name=app_name)
             return False
     except Exception as e:
         print(
-            f"Error: {e}. Could not retrieve developer email for app '{app_name}'. Notification not sent."
-        )
+            f"Error: {e}. Could not retrieve developer email for app '{app_name}'. Notification not sent.")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Could not retrieve developer email for app '{app_name}'. Notification not sent.",
+                   app_name=app_name)
         return False
 
     subject = f"URGENT Your app '{app_name}' has crashed!"
     body = f"Dear '{developer_name}',We regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
-    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
+    message = {"receiver_email": developer_mailid,
+               "subject": subject, "body": body}
 
     try:
         produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
         print(
-            f"Notification sent to developer '{developer_mailid}' for app '{app_name}'."
-        )
+            f"Notification sent to developer '{developer_mailid}' for app '{app_name}'.")
+        logger.log(service_name=SERVICE_NAME, level=1,
+                   msg=f"Notification sent to developer '{developer_mailid}' for app '{app_name}'.", app_name=app_name,
+                   user_id=developer_mailid)
         return True
     except Exception as e:
         print(
-            f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'."
-        )
+            f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'.")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg=f"Error: {e}. Failed to send notification to developer '{developer_mailid}' for app '{app_name}'.",
+                   app_name=app_name, user_id=developer_mailid)
         return False
 
 
-# **********************************| Communication with Modules |***********************************
+# ************************| Communication with Modules |****************************
 
 
 def appHealthCheck():
@@ -235,13 +280,15 @@ def appHealthCheck():
                 response_dict = requests.get(app_api_url).json()
                 timestamp = response_dict["data"]["time_stamp"]
 
-                # Store app health status in MongoDB
+                # store app health status in App_Status Collection
                 store_app_health_status(app["name"], timestamp, "active")
 
                 return response_dict
 
             except Exception as e:
-                print(e)
+                print(f"Error {e} in appHealthCheck().")
+                logger.log(service_name=SERVICE_NAME, level=3, msg=f"Error {e} in appHealthCheck().",
+                           app_name=app["name"], user_id=get_developer_mailid(app["name"])[0])
                 return dict()
 
         time.sleep(API_SLEEP_TIME)
@@ -265,7 +312,8 @@ def apiHealthCheck():
                 return response_dict
 
             except Exception as e:
-                print(e)
+                print(f"Error {e} in apiHealthCheck().")
+                logger.log(service_name=SERVICE_NAME, level=3, msg=f"Error {e} in apiHealthCheck().")
                 return dict()
 
         time.sleep(API_SLEEP_TIME)
@@ -280,6 +328,8 @@ def postHealthCheck():
 
     if not MODULE_LIST:
         print("Failed to get MODULE_LIST from configuration file. Aborting...")
+        logger.log(service_name=SERVICE_NAME, level=3,
+                   msg="Failed to get MODULE_LIST from configuration file. Aborting...")
         return
 
     while True:
@@ -297,8 +347,10 @@ def postHealthCheck():
                 produce.push(topic_name, key, json.dumps(message))
         except KeyError as e:
             print(f"KeyError: {e}. Failed to post health check message.")
+            logger.log(service_name=SERVICE_NAME, level=3, msg=f"KeyError: {e}. Failed to post health check message.")
         except Exception as e:
             print(f"Error: {e}. Failed to post health check message.")
+            logger.log(service_name=SERVICE_NAME, level=3, msg=f"Error: {e}. Failed to post health check message.")
         # time interval for next health message to send.
         finally:
             time.sleep(PRODUCER_SLEEP_TIME)
@@ -330,17 +382,17 @@ def getHealthStatus():
                     store_health_status(module_name, float(timestamp), "active")
                 else:
                     print(
-                        "Error: Required fields are missing in the health status message."
-                    )
-        except KeyError as e:
-            print(f"Error: {e}. Failed to get health status.")
+                        "Error: Required fields are missing in the health status message.")
+                    logger.log(service_name=SERVICE_NAME, level=3,
+                               msg="Error: Required fields are missing in the health status message.")
         except Exception as e:
             print(f"Error: {e}. Failed to get health status.")
+            logger.log(service_name=SERVICE_NAME, level=3, msg=f"Error: {e}. Failed to get health status.")
         finally:
             time.sleep(CONSUMER_SLEEP_TIME)
 
 
-# **********************************| Monitoring of Modules |***********************************
+# ***********| Monitoring of Modules |************
 
 
 def timeOutTracker():
@@ -365,8 +417,9 @@ def timeOutTracker():
                     ):
                         # Take action and send notification to admin
                         print(
-                            f"Module '{module_name}' has not responded for a long time! Notification sent to admin.."
-                        )
+                            f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
+                        logger.log(service_name=SERVICE_NAME, level=2,
+                                   msg=f"Module '{module_name}' has not responded for a long time! Notification sent to admin..")
                         store_health_status(
                             module_name, last_update_timestamp, "inactive"
                         )
@@ -375,8 +428,9 @@ def timeOutTracker():
                         """
                 except Exception as e:
                     print(
-                        f"Error: {e}. Failed to monitor module '{module_name}' for timeout."
-                    )
+                        f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
+                    logger.log(service_name=SERVICE_NAME, level=3,
+                               msg=f"Error: {e}. Failed to monitor module '{module_name}' for timeout.")
                     # Continue to the next module in case of any error
                     continue
 
@@ -392,16 +446,20 @@ def timeOutTracker():
                     ):
                         # Take action and send notification to admin/dev
                         print(
-                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev.."
-                        )
+                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..")
+                        logger.log(service_name=SERVICE_NAME, level=2,
+                                   msg=f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..",
+                                   app_name=app_name, user_id=get_developer_mailid(app_name)[0])
                         store_app_health_status(
                             app_name, last_update_timestamp, "inactive"
                         )
                         notify_to_developer(app_name)
                 except Exception as e:
                     print(
-                        f"Error: {e}. Failed to monitor app '{app_name}' for timeout."
-                    )
+                        f"Error: {e}. Failed to monitor app '{app_name}' for timeout.")
+                    logger.log(service_name=SERVICE_NAME, level=3,
+                               msg=f"Error: {e}. Failed to monitor app '{app_name}' for timeout.", app_name=app_name,
+                               user_id=get_developer_mailid(app_name)[0])
                     # Continue to the next app in case of any error
                     continue
 
@@ -410,12 +468,13 @@ def timeOutTracker():
 
         except Exception as e:
             print(f"Error: {e}. Failed to monitor modules to track .")
+            logger.log(service_name=SERVICE_NAME, level=3, msg=f"Error: {e}. Failed to monitor modules to track .")
             continue
 
-
-if __name__ == "__main__":
+if __name__=='__main__':
     print("Monitoring System Started....")
     SERVICES, MODULE_LIST = get_service_info(CONFIG_FILE_PATH)
+    init_ModuleStatus_AppStatus()
     # Create a producer to send healthcheck request at regular intervals and update the timeout queue
     producer_thread = threading.Thread(target=postHealthCheck, args=())
 
@@ -425,6 +484,9 @@ if __name__ == "__main__":
     # Create a thread for app healthcheck  at regular intervals and update the timeout queue
     appHealth_thread = threading.Thread(target=appHealthCheck, args=())
 
+    # Create a thread for Api healthcheck  at regular intervals and update the timeout queue
+    # apiHealth_thread = threading.Thread(target=apiHealthCheck, args=())
+
     time.sleep(TRACKING_INTERVAL)
     # Create a timeout tracker to keep track of the values in the timeout queue
     tracker_thread = threading.Thread(target=timeOutTracker, args=())
@@ -433,6 +495,7 @@ if __name__ == "__main__":
     producer_thread.start()
     appHealth_thread.start()
     consumer_thread.start()
+    # apiHealth_thread.start()
     tracker_thread.start()
 
     try:
@@ -444,4 +507,5 @@ if __name__ == "__main__":
         producer_thread.join()
         consumer_thread.join()
         appHealth_thread.join()
+        # apiHealth_thread.join()
         tracker_thread.join()

@@ -21,5 +21,7 @@ The configuration file `topic_info.json` contains information about the Kafka to
 To run the service, execute the following command:
 
 ```bash
-python3 monitoring_service.py
+cd monitoring-service
+python3 main.py
+
 
