@@ -1,0 +1,12 @@
+app_name: myapp1
+schedule:
+  time: 30
+version: "1.0"
+type: monolithic
+health: /ping
+roll_back: rollback.sh
+max_retries: 3
+downtime: -1
+# Docker image pull service
+# maintainance time
+# multiple deployments

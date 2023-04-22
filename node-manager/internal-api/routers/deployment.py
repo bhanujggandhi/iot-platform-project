@@ -4,10 +4,12 @@ import os
 import shutil
 import sys
 from typing import Annotated
-from bson import ObjectId
+from zipfile import ZipFile
 
 import requests
 import uvicorn
+import yaml
+from bson import ObjectId
 from decouple import config
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from pymongo import MongoClient
@@ -29,29 +31,28 @@ client = MongoClient(mongokey)
 db = client["platform"]
 
 
-async def schedule_deployement_task(time: int, file: UploadFile = File(...), userid=""):
+async def schedule_deployement_task(time: int, filename, userid="", appid=""):
     await asyncio.sleep(time)
     # Logic or api call will come here to deploy
     try:
-        fname = file.filename
-        fname = fname.split(".")[0]
         message = {
             "service": "",
-            "app": fname,
+            "app": filename,
             "operation": "deploy",
-            "id": userid,
+            "appid": appid,
+            "userid": userid,
             "src": "topic_internal_api",
         }
         produce.push("topic_node_manager", "", json.dumps(message))
-        os.system(f"rm -rf {file.filename}")
-        print(status)
-    except:
-        print("invalid")
+    except Exception as e:
+        print(e)
     print("Task Deployed")
 
 
 @router.post("/", dependencies=[Depends(JWTBearer())])
-async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: UploadFile = File(...)):
+async def upload_zip_file(
+    background_tasks: BackgroundTasks, token: Annotated[str, Depends(JWTBearer())], file: UploadFile = File(...)
+):
     """
     Api to server upload zip file requets in order for developer to deploy
     """
@@ -89,21 +90,25 @@ async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: Upl
             status = downloadFile(CONTAINER_NAME, file.filename, "./verify/")
             print(status)
             if verify_zip(f"./verify/{file.filename}") == verified:
-                os.system(f"rm -rf ./verify/{file.filename}")
-                os.system(f"rm -rf ./{file.filename}")
+                pass
             else:
                 status = deleteFile(CONTAINER_NAME, file.filename)
                 print(status)
                 status = uploadFile(CONTAINER_NAME, ".", file.filename)
                 print(status)
-                os.system(f"rm -rf ./verify/{file.filename}")
-                os.system(f"rm -rf ./{file.filename}")
         else:
             # Upload to the cloud
             status = uploadFile(CONTAINER_NAME, ".", file.filename)
 
         fname = file.filename
         fname = fname.split(".")[0]
+
+        with ZipFile(file.filename, "r") as zip_ref:
+            zip_ref.extractall(".")
+
+        with open(fname + "/schedule.yml", "r") as f:
+            sched = yaml.safe_load(f)
+
         message = {
             "service": "",
             "app": fname,
@@ -112,7 +117,14 @@ async def upload_zip_file(token: Annotated[str, Depends(JWTBearer())], file: Upl
             "userid": curr_user["id"],
             "src": "topic_internal_api",
         }
-        produce.push("topic_node_manager", "", json.dumps(message))
+        if sched["schedule"]["time"] == -1:
+            produce.push("topic_node_manager", "", json.dumps(message))
+        else:
+            background_tasks.add_task(
+                schedule_deployement_task, int(sched["schedule"]["time"]), fname, curr_user["id"], str(exist["_id"])
+            )
+        os.system(f"rm -rf ./verify/{file.filename}")
+        os.system(f"rm -rf ./{file.filename}")
         return {"status": "True", "msg": "File is deploying safely. Please check back after 5 minutes"}
     else:
         os.remove(file.filename)

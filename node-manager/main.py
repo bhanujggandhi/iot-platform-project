@@ -131,7 +131,7 @@ def deploy_app(appname: str, appid: str, userid: str):
     message = {
         "receiver_email": curr_user["email"],
         "subject": f"{appname} Deployed",
-        "body": f"Hello Developer,\nWe have successfully deployed your app at http://{ip}:{assign_port}",
+        "body": f"Hello Developer,\nWe have successfully deployed your app at http://bhanujggandhi.me/apps/app/{appname}",
     }
 
     produce.push("topic_notification", "node-manager-deploy", json.dumps(message))
