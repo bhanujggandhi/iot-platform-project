@@ -50,8 +50,8 @@ def uploadFile(containerName, sourcePath, localFileName):
             "status": True,
             "message": f"File {localFileName} uploaded successfully",
         }
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Download File from Azure Storage
@@ -74,8 +74,8 @@ def downloadFile(containerName, serverFileName, destinationPath):
             "status": True,
             "message": f"File {serverFileName} downloaded successfully",
         }
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Delete File from Azure Storage
@@ -110,8 +110,8 @@ def listFiles(containerName):
         blob_list = container_client.list_blobs()
         fileList = [blob.name for blob in blob_list]
         return {"status": True, "fileList": fileList}
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Sample Driver Code
