@@ -1,15 +1,17 @@
 import json
 import os
 import socket
+import threading
+import time
 import zipfile
 from typing import Union
-import time
 
 import uvicorn
 from bson import ObjectId
 from confluent_kafka import Consumer, Producer
 from decouple import config
 from fastapi import FastAPI
+from heartbeat_service import HeartbeatService
 from Messenger import Produce
 from pymongo import MongoClient
 from storage import downloadFile
@@ -20,6 +22,11 @@ mongokey = config("mongoKey")
 client = MongoClient(mongokey)
 db = client["platform"]
 producer = Produce()
+
+
+SERVICE_NAME = "Node Manager"
+# Create a new instance of the HeartbeatService class
+heartbeat_service = HeartbeatService("topic_node_manager_health", SERVICE_NAME)
 
 
 def generate_docker_image(service):
@@ -442,6 +449,8 @@ Expected json from producer of topic topic_node_manager
 
 if __name__ == "__main__":
     consume = Consume(TOPIC)
+    thread = threading.Thread(target=heartbeat_service.start)
+    thread.start()
     while True:
         resp = consume.pull()
         if resp["status"] == False:

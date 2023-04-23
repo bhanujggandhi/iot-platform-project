@@ -1,3 +1,3 @@
 {
-  "modules": ["notification", "internal-api", "monitoring-service"]
+  "modules": ["notification", "internal-api", "monitoring"]
 }

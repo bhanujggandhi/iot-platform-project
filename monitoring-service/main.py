@@ -81,8 +81,7 @@ def get_service_info(config_file):
         )
         return {}, []
     except json.JSONDecodeError as e:
-        print(
-            f"Failed to decode configuration file: {config_file}. Error: {e}")
+        print(f"Failed to decode configuration file: {config_file}. Error: {e}")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -103,8 +102,7 @@ def store_health_status(module_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to store health status for module '{module_name}'")
+        print(f"Error: {e}. Failed to store health status for module '{module_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -121,8 +119,7 @@ def store_app_health_status(app_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         app_status_collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to store health status for app '{app_name}'")
+        print(f"Error: {e}. Failed to store health status for app '{app_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -136,8 +133,7 @@ def store_app_health_status(app_name, timestamp, status):
 def get_last_update_timestamp(module_name):
     try:
         # Query MongoDB to get the latest document of the specific module based on module_name field
-        document = collection.find_one(
-            {"module_name": module_name, "status": "active"})
+        document = collection.find_one({"module_name": module_name, "status": "active"})
         # Extract and return the timestamp from the document
         if document:
             return document["last_updated"]
@@ -166,8 +162,7 @@ def get_app_last_update_timestamp(app_name):
         else:
             return None
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        print(f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -195,6 +190,7 @@ def init_ModuleStatus_AppStatus():
     for app in app_list:
         store_app_health_status(app["name"], time.time(), "active")
 
+
 # Refresh app status from APP Collection in a time interval dynamically.
 
 
@@ -208,8 +204,7 @@ def refresh_app_status():
             update = {"$set": {"status": "active", "last_updated": time.time()}}
             app_status_collection.update_one(filter, update, upsert=True)
         except Exception as e:
-            print(
-                f"Error: {e}. Failed to refresh health status for app '{app_name}'")
+            print(f"Error: {e}. Failed to refresh health status for app '{app_name}'")
             logger.log(
                 service_name=SERVICE_NAME,
                 level=3,
@@ -217,6 +212,7 @@ def refresh_app_status():
                 app_name=app_name,
                 user_id=get_developer_mailid(app_name)[0],
             )
+
 
 # return the mail id of developer associated with the app.
 
@@ -254,8 +250,7 @@ def get_developer_mailid(app_name):
             developer_mailid = str(document["email"])
             developer_name = str(document["name"])
         else:
-            print(
-                f"No user found with id '{developer_id}' in User collection.")
+            print(f"No user found with id '{developer_id}' in User collection.")
             logger.log(
                 service_name=SERVICE_NAME,
                 level=2,
@@ -263,8 +258,7 @@ def get_developer_mailid(app_name):
             )
             return None
     except Exception as e:
-        print(
-            f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        print(f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -329,8 +323,7 @@ def notify_to_developer(app_name):
     body = f"Dear {developer_name}, \nWe regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
-    message = {"receiver_email": developer_mailid,
-               "subject": subject, "body": body}
+    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
 
     try:
         produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
@@ -365,8 +358,7 @@ def notify_to_admin(module_name):
     subject = f"URGENT, In your platform '{module_name}' has crashed!"
     body = f"Dear {admin_name}, \nWe regret to inform you that In your platform, module '{module_name}' has crashed please try to restart."
     key = ""
-    message = {"receiver_email": admin_mailid,
-               "subject": subject, "body": body}
+    message = {"receiver_email": admin_mailid, "subject": subject, "body": body}
 
     try:
         produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
@@ -376,7 +368,7 @@ def notify_to_admin(module_name):
         logger.log(
             service_name=SERVICE_NAME,
             level=1,
-            msg=f"Notification sent to admin '{admin_mailid}' for module '{module_name}'."
+            msg=f"Notification sent to admin '{admin_mailid}' for module '{module_name}'.",
         )
         return True
     except Exception as e:
@@ -386,7 +378,7 @@ def notify_to_admin(module_name):
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
-            msg=f"Error: {e}. Failed to send notification to admin '{admin_mailid}' for module '{module_name}'."
+            msg=f"Error: {e}. Failed to send notification to admin '{admin_mailid}' for module '{module_name}'.",
         )
         return False
 
@@ -402,11 +394,11 @@ def appHealthCheck():
 
     flag = 1
     while True:
-        if (flag == 0):
+        if flag == 0:
             refresh_app_status()
             print("Refresh cycle: Application status has been refreshed.")
         else:
-            flag = (flag+1) % 4
+            flag = (flag + 1) % 4
 
         app_list = getAppData()
         for app in app_list:
@@ -529,8 +521,7 @@ def getHealthStatus():
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
-                    store_health_status(
-                        module_name, float(timestamp), "active")
+                    store_health_status(module_name, float(timestamp), "active")
                 else:
                     print(
                         "Error: Required fields are missing in the health status message."
@@ -569,8 +560,7 @@ def timeOutTracker():
             # Iterate through the list of modules
             for module_name in MODULE_LIST:
                 try:
-                    last_update_timestamp = get_last_update_timestamp(
-                        module_name)
+                    last_update_timestamp = get_last_update_timestamp(module_name)
 
                     if (
                         last_update_timestamp
@@ -607,8 +597,7 @@ def timeOutTracker():
             for app in app_list:
                 app_name = app["name"]
                 try:
-                    last_update_timestamp = get_app_last_update_timestamp(
-                        app_name)
+                    last_update_timestamp = get_app_last_update_timestamp(app_name)
 
                     if (
                         last_update_timestamp

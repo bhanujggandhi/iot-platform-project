@@ -34,6 +34,7 @@ import time
 from logger_utils import Logger
 from Messenger import Consume, Produce
 
+
 class HeartbeatService:
     def __init__(self, topic, service_name):
         self.topic = topic
