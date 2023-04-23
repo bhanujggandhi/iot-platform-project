@@ -36,7 +36,7 @@ metadata_collection = sensor_db.SensorMetadata
 def sensor_helper_read(sensor) -> dict:
     return {
         # "id": str(sensor["_id"]),
-        "sensor-id": sensor["sensorID"],
+        "sensorid": sensor["sensorid"],
         "sensorName": sensor["sensorName"],
         "sensorType": sensor["sensorType"],
         "sensorLocation": sensor["sensorLocation"],
@@ -61,6 +61,7 @@ async def get_sensor_data(duration: int):
 async def get_sensors():
     sensors = []
     for x in metadata_collection.find({}):
+        print(x.keys())
         sensors.append(sensor_helper_read(x))
 
     return {"status": "200", "data": sensors}

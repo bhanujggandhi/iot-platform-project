@@ -37,15 +37,25 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     if response.status_code >= 400:
         error_message = response.json().get("error") or response.text
-        logger.error(f"{request.method} {request.url.path} - {response.status_code}: {error_message}")
+        logger.error(
+            f"{request.method} {request.url.path} - {response.status_code}: {error_message}"
+        )
     else:
-        logger.info(f"{request.method} {request.url.path} - {response.status_code} - {body}")
+        logger.info(
+            f"{request.method} {request.url.path} - {response.status_code} - {body}"
+        )
 
     return response
 
 
 @app.get("/fetch")
-async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, startTime: int = None, endTime: int = None):
+async def fetch(
+    sensorID: str = "",
+    fetchType: str = "",
+    duration: int = 1,
+    startTime: int = None,
+    endTime: int = None,
+):
     """
     This function will be responsible for fetching the data from Om2m and sending the data to ReqstManager upon request from sensorManager.
     2 Modes of Fetching data from Om2m:
@@ -95,7 +105,12 @@ async def fetch(sensorID: str = "", fetchType: str = "", duration: int = 1, star
 
 
 @app.post("/register")
-async def register(sensorName: str = "", sensorType: str = "", sensorLocation: str = "", sensorDescription: str = ""):
+async def register(
+    sensorName: str = "",
+    sensorType: str = "",
+    sensorLocation: str = "",
+    sensorDescription: str = "",
+):
     """
     This function will be responsible for registering the sensor with the SensorDB and sending the sensorID to the ReqstManager.
     """

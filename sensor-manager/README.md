@@ -1,24 +1,93 @@
-Sensor Manager module : 
-1. sensormanager.py : contains all the api endpoints accessible by the app developer through api gateway. List of available endpoints are as follows : 
-    - get(“/fetchSensors”) :  parameters : {} :: {"data" : [list of all sensors]}
-      fetch all the sensors that are available for that particular app developer
+Input for fetchdata function:
 
-    - get(“/fetchTimeSeries”) : parameters : {sensorID: str, startTime: int = None, endTime: int = None} :: {"data": [[timestamp, output, datapoint]]}
+```py
+ params = {
+        "readingtype": "Flowrate",
+        "starttime": "2023-01-14T08:26:20Z",
+        "numofsensors": 2,
+        "lat": 17.445402,
+        "long": 78.349875,
+        "sensorIDs": ["WM-WF-PH03-00"],
+        "data_flag": True
+    }
 
-    - get(“/fetchInstant”) : parameters : {sensorID: str} :: {"data": [[timestamp, output, datapoint]]}
+```
 
-    - get(“/fetchRealTime”) : parameters : {sensorID: str, duration: int = 1} :: {"data": [[timestamp, output, datapoint]]}
+<!-- return Format -->
 
-    - get(“/register”) : parameters : {sensorName: str, sensorType: str, sensorLocation: str, sensorDescription: str}
-    - get(“/deregister”) : parameters : {sensorID: str}
-    - get(“/bind”) : parameters : {}
+Example Output from fetchdata function:
 
-2. sensordata_to_db.py : Pushes sensor data of all sensors to the DB at a particular predefined frequency.
-3. kafka_comm.py : Analytics module can fetch data from the sensormanager module through kafka
+```json
+{
+  "WM-WF-PH03-00": {
+    "fields": [
+      "Timestamp",
+      "Flowrate",
+      "Total Flow",
+      "Pressure",
+      "Pressure Voltage",
+      "VersionInfo"
+    ],
+    "data": [
+      {
+        "created_at": "2023-01-24T02:55:52+05:30",
+        "field1": 0.0,
+        "field2": 9041.69,
+        "field3": 0.0,
+        "field4": 0.7823,
+        "field5": "V6.0.0"
+      },
+      {
+        "created_at": "2023-01-24T02:54:13+05:30",
+        "field1": 0.0,
+        "field2": 9041.69,
+        "field3": 0.0,
+        "field4": 0.769409,
+        "field5": "V6.0.0"
+      }
+    ]
+  }
+}
+```
 
-Developer token : eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY0M2M2MGExOThiZjY4ZWQ3NTMzYjc2YSIsInJvbGUiOiJkZXZlbG9wZXIiLCJlbWFpbCI6ImJpc3dhc3NhbnRhbnUyMkBnbWFpbC5jb20iLCJleHBpcnkiOjE4MDUxNjQwMDguMDQ1MzIxfQ.weJmiCkL_D8ytMJhvdpSS7u4wlE4tjxMNaPztkgNAGg
+### Recommended SensorIDS for testing:
 
-Platform token : eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY0MzZiYWQzYjhmZTM1NjVhMjkzNTc0NCIsInJvbGUiOiJwbGF0Zm9ybSIsImVtYWlsIjoiZ2FuZGhpYmhhbnVqQGdtYWlsLmNvbSIsImV4cGlyeSI6MTgwNTE2NDAxMC4yNzM5Mzk0fQ.2XBFeN7EpoH8eIwtBKSNKRoIO8foEPYendi431d-dMY
+| SensorID      | Description                  |
+| ------------- | ---------------------------- |
+| WM-WF-PH03-00 | Water Quality                |
+| SL-VN03-00    | Solar Monitoring             |
+| SR-EM-KH04-00 | Smart Room Energy Monitoring |
 
-App token : 
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY0M2Q3MWIxYWE1Njc3ZjNhYTJiOGM4YyIsImV4cGlyeSI6MTgwNTIwNjk2Mi45NzQ5MjQ4fQ.9qK3RtHGiSDrM7GfIYQ3AyR0K4Te3clXGTqYRKjDfDE
+- All the Fields are optional, if not passed then default values are used.
+
+- Here based on keys readingtype,lat,long Sensors are selected and starttime is used to get the data from that time to current time/till 8days (whichever is minimum). NumofSensors denotes required instance of the sensors, If upon searching the sensors based on readingtype,lat,long we get more sensors than required instance then top n sensors are selected randomly , where n denotes numofsensors.
+
+- if data_flag is set to True then data is fetched else the function returns the sensorIDs of the sensors which are selected.
+
+- if SensorsIDs are passed then data is fetched for those sensors only , regardless of readingtype,lat,long.
+
+Default values for parms are:
+
+```py
+    readingtype = ""
+    starttime = ""
+    numofsensors = 1
+    lat = 0
+    long = 0
+    sensorIDs = []
+    data_flag = True
+
+```
+
+Expected Datatype of fields in parms:
+
+```py
+    readingtype = string
+    starttime = string
+    numofsensors = int
+    lat = float
+    long = float
+    sensorIDs = list of strings
+    data_flag = bool
+
+```

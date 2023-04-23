@@ -1,0 +1,6 @@
+app_name: myapp1
+controller_info:
+  - count: 1
+    type: Solar
+  - count: 1
+    type: AC

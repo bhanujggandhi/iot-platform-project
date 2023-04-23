@@ -15,27 +15,18 @@ def user_schema(username, email, password):
         "_id": ObjectId(),
         "username": username,
         "email": email,
-        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+        "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()),
     }
     return data
 
 
 def dev_schema(dev_id, dev_email):
-    data = {
-        "_id": ObjectId(),
-        "dev_id": dev_id,
-        "dev_email": dev_email
-    }
+    data = {"_id": ObjectId(), "dev_id": dev_id, "dev_email": dev_email}
     return data
 
 
 def app_schema(app_id, dev_id, app_name):
-    data = {
-        "_id": ObjectId(),
-        "app_id": app_id,
-        "dev_id": dev_id,
-        "app_name": app_name
-    }
+    data = {"_id": ObjectId(), "app_id": app_id, "dev_id": dev_id, "app_name": app_name}
     return data
 
 
@@ -48,7 +39,7 @@ def index():
 def add(username: str, email: str, password: str):
     database.use_collection("users")
 
-    email_isvaild = re.search(r'[\w.]+\@[\w.]+', email)
+    email_isvaild = re.search(r"[\w.]+\@[\w.]+", email)
     if not email_isvaild:
         return {"message": "Invalid Email"}
 

@@ -8,7 +8,9 @@ AZURE_STORAGE_CONNECTION_STRING = config("AZURE_STORAGE_CONNECTION_STRING")
 # Getting Container Name
 def getContainer(containerName):
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            AZURE_STORAGE_CONNECTION_STRING
+        )
     except:
         return {"status": False, "message": "Network Error"}
 
@@ -16,7 +18,9 @@ def getContainer(containerName):
         container_client = blob_service_client.create_container(containerName)
     except:
         try:
-            container_client = blob_service_client.get_container_client(container=containerName)
+            container_client = blob_service_client.get_container_client(
+                container=containerName
+            )
         except:
             return {"status": False, "message": "Network Error"}
     return {
@@ -37,15 +41,17 @@ def uploadFile(containerName, sourcePath, localFileName):
 
     try:
         upload_file_path = os.path.join(sourcePath, localFileName)
-        blob_client = blob_service_client.get_blob_client(container=containerName, blob=localFileName)
+        blob_client = blob_service_client.get_blob_client(
+            container=containerName, blob=localFileName
+        )
         with open(file=upload_file_path, mode="rb") as data:
             blob_client.upload_blob(data)
         return {
             "status": True,
             "message": f"File {localFileName} uploaded successfully",
         }
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Download File from Azure Storage
@@ -59,15 +65,17 @@ def downloadFile(containerName, serverFileName, destinationPath):
 
     try:
         download_file_path = os.path.join(destinationPath, serverFileName)
-        blob_client = blob_service_client.get_blob_client(container=containerName, blob=serverFileName)
+        blob_client = blob_service_client.get_blob_client(
+            container=containerName, blob=serverFileName
+        )
         with open(file=download_file_path, mode="wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
         return {
             "status": True,
             "message": f"File {serverFileName} downloaded successfully",
         }
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Delete File from Azure Storage
@@ -80,7 +88,9 @@ def deleteFile(containerName, fileName):
     container_client = resp["container_client"]
 
     try:
-        blob_client = blob_service_client.get_blob_client(container=containerName, blob=fileName)
+        blob_client = blob_service_client.get_blob_client(
+            container=containerName, blob=fileName
+        )
         blob_client.delete_blob()
         return {"status": True, "message": f"File {fileName} deleted successfully"}
     except:
@@ -100,8 +110,8 @@ def listFiles(containerName):
         blob_list = container_client.list_blobs()
         fileList = [blob.name for blob in blob_list]
         return {"status": True, "fileList": fileList}
-    except:
-        return {"status": False, "message": "Network Error"}
+    except Exception as e:
+        return {"status": False, "message": e}
 
 
 # Sample Driver Code

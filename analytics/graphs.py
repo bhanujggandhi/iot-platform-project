@@ -7,25 +7,13 @@ app = FastAPI()
 # Example dictionary to store data for different developers and apps
 data_dict = {
     "developer1": {
-        "app1": {
-            "labels": ["APi 1", "APi 2", "Api 3"],
-            "data": [10, 60, 40]
-        },
-        "app2": {
-            "labels": ["Label 1", "Label 2", "Label 3"],
-            "data": [40, 20, 85]
-        }
+        "app1": {"labels": ["APi 1", "APi 2", "Api 3"], "data": [10, 60, 40]},
+        "app2": {"labels": ["Label 1", "Label 2", "Label 3"], "data": [40, 20, 85]},
     },
     "developer2": {
-        "app1": {
-            "labels": ["Label 1", "Label 2", "Label 3"],
-            "data": [30, 40, 50]
-        },
-        "app2": {
-            "labels": ["Label 1", "Label 2", "Label 3"],
-            "data": [20, 10, 5]
-        }
-    }
+        "app1": {"labels": ["Label 1", "Label 2", "Label 3"], "data": [30, 40, 50]},
+        "app2": {"labels": ["Label 1", "Label 2", "Label 3"], "data": [20, 10, 5]},
+    },
 }
 
 
@@ -35,7 +23,7 @@ data_dict_gauge = {
             "value": 75,
             "max": 100,
             "color": "rgba(75, 192, 192, 0.5)",
-            "borderColor": "rgba(75, 192, 192, 1)"
+            "borderColor": "rgba(75, 192, 192, 1)",
         }
     }
 }
@@ -43,18 +31,19 @@ data_dict_gauge = {
 data_dict_heatmap = {
     "developer1": {
         "app1": {
-            "data":[
-                        [30, 40, 50, 60, 70],
-                        [20, 25, 30, 35, 40],
-                        [10, 15, 20, 25, 30],
-                        [5, 10, 15, 20, 25],
-                        [0, 5, 10, 15, 20]
-]
+            "data": [
+                [30, 40, 50, 60, 70],
+                [20, 25, 30, 35, 40],
+                [10, 15, 20, 25, 30],
+                [5, 10, 15, 20, 25],
+                [0, 5, 10, 15, 20],
+            ]
         },
         # Add more app_id data here
     },
     # Add more developer_id data here
 }
+
 
 # APIs for different graphs..
 @app.get("/graph/performance_analysis/{developer_id}/{app_id}")
@@ -67,7 +56,7 @@ async def generate_performance_analysis_chart(developer_id: str, app_id: str):
     if not labels or not data:
         return HTMLResponse(content="Data not found", status_code=404)
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>Bar Chart</title>
@@ -137,14 +126,16 @@ async def generate_performance_analysis_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % (labels, data)
+    """ % (
+        labels,
+        data,
+    )
 
     return HTMLResponse(content=chart_html)
 
 
 @app.get("/graph/sample_analysis/{developer_id}/{app_id}")
 async def generate_line_chart(developer_id: str, app_id: str):
-
     # Get data and labels from the data_dict based on developer_id and app_id
     labels = data_dict.get(developer_id, {}).get(app_id, {}).get("labels", [])
     data = data_dict.get(developer_id, {}).get(app_id, {}).get("data", [])
@@ -153,7 +144,7 @@ async def generate_line_chart(developer_id: str, app_id: str):
     if not labels or not data:
         return HTMLResponse(content="Data not found", status_code=404)
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>Line Chart with Animation</title>
@@ -213,7 +204,10 @@ async def generate_line_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % (labels, data)
+    """ % (
+        labels,
+        data,
+    )
 
     return HTMLResponse(content=chart_html)
 
@@ -228,7 +222,7 @@ async def generate_pie_chart(developer_id: str, app_id: str):
     if not labels or not data:
         return HTMLResponse(content="Data not found", status_code=404)
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>Pie Chart with Animation</title>
@@ -284,7 +278,10 @@ async def generate_pie_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % (labels, data)
+    """ % (
+        labels,
+        data,
+    )
 
     return HTMLResponse(content=chart_html)
 
@@ -299,7 +296,7 @@ async def generate_doughnut_chart(developer_id: str, app_id: str):
     if not labels or not data:
         return HTMLResponse(content="Data not found", status_code=404)
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>doughnut/Guage Chart with Animation</title>
@@ -358,12 +355,16 @@ async def generate_doughnut_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % (labels, data)
+    """ % (
+        labels,
+        data,
+    )
 
     return HTMLResponse(content=chart_html)
 
 
 # trying apexchart js ..
+
 
 @app.get("/graph/circle_radius_bar_chart/{developer_id}/{app_id}")
 async def generate_circle_radius_bar_chart(developer_id: str, app_id: str):
@@ -378,21 +379,12 @@ async def generate_circle_radius_bar_chart(developer_id: str, app_id: str):
     chart_data = {
         "chart": {
             "type": "radialBar",
-            "height": 300, # Set the height of the chart
-            "toolbar": {
-                "show": True # Show the toolbar
-            }
+            "height": 300,  # Set the height of the chart
+            "toolbar": {"show": True},  # Show the toolbar
         },
         "series": data,
         "labels": labels,
-        "colors": [
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56',
-            '#4BC0C0',
-            '#9966FF',
-            '#FF9F40'
-        ],
+        "colors": ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"],
         "plotOptions": {
             "radialBar": {
                 "startAngle": -90,
@@ -404,40 +396,38 @@ async def generate_circle_radius_bar_chart(developer_id: str, app_id: str):
                 },
                 "dataLabels": {
                     "name": {
-                        "fontSize": '16px',
-                        "color": '#000',
+                        "fontSize": "16px",
+                        "color": "#000",
                         "fontWeight": 600,
-                        "show": True
+                        "show": True,
                     },
                     "value": {
-                        "fontSize": '14px',
-                        "color": '#000',
+                        "fontSize": "14px",
+                        "color": "#000",
                         "fontWeight": 400,
-                        "show": True
+                        "show": True,
                     },
                 },
                 "barHeight": "80%",
                 "distributed": True,
-                "barWidth": 10
+                "barWidth": 10,
             }
         },
         "options": {
             "responsive": True,
-            "legend": {
-                "show": False
-            },
+            "legend": {"show": False},
             "title": {
-            "text": 'Circle Radius Bar Chart',  # Update the chart title
-            "align": 'left'  # Add alignment for chart title (left, center, right)
+                "text": "Circle Radius Bar Chart",  # Update the chart title
+                "align": "left",  # Add alignment for chart title (left, center, right)
             },
             "subtitle": {
-                "text": 'Subtitle text goes here',  # Add a subtitle
-                "align": 'left'  # Add alignment for subtitle (left, center, right)
+                "text": "Subtitle text goes here",  # Add a subtitle
+                "align": "left",  # Add alignment for subtitle (left, center, right)
             },
-        }
+        },
     }
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>Circle Radius Bar Chart with ApexCharts</title>
@@ -452,7 +442,9 @@ async def generate_circle_radius_bar_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % json.dumps(chart_data)
+    """ % json.dumps(
+        chart_data
+    )
 
     return HTMLResponse(content=chart_html)
 
@@ -470,60 +462,38 @@ async def generate_heatmap_chart(developer_id: str, app_id: str):
     series = []
     series_names = []
     for i, row in enumerate(data):
-        series.append({
-            "name": f"Series {i+1}",
-            "data": row
-        })
+        series.append({"name": f"Series {i+1}", "data": row})
         series_names.append(f"Series {i+1}")
 
     chart_data = {
         "chart": {
             "type": "heatmap",
-            "height": 300, # Set the height of the chart
-            "toolbar": {
-                "show": True # Show the toolbar
-            }
+            "height": 300,  # Set the height of the chart
+            "toolbar": {"show": True},  # Show the toolbar
         },
         "plotOptions": {
             "heatmap": {
                 "shadeIntensity": 0.5,
                 "colorScale": {
                     "ranges": [
-                        {
-                            "from": 0,
-                            "to": 20,
-                            "name": "Low",
-                            "color": "#FF0000"
-                        },
-                        {
-                            "from": 21,
-                            "to": 50,
-                            "name": "Medium",
-                            "color": "#FFA500"
-                        },
-                        {
-                            "from": 51,
-                            "to": 100,
-                            "name": "High",
-                            "color": "#00FF00"
-                        }
+                        {"from": 0, "to": 20, "name": "Low", "color": "#FF0000"},
+                        {"from": 21, "to": 50, "name": "Medium", "color": "#FFA500"},
+                        {"from": 51, "to": 100, "name": "High", "color": "#00FF00"},
                     ]
-                }
+                },
             }
         },
         "series": series,
         "options": {
             "responsive": True,
-            "legend": {
-                "show": False
-            },
+            "legend": {"show": False},
             "title": {
-                "text": 'Heatmap Chart',  # Update the chart title
-                "align": 'left'  # Add alignment for chart title (left, center, right)
+                "text": "Heatmap Chart",  # Update the chart title
+                "align": "left",  # Add alignment for chart title (left, center, right)
             },
             "subtitle": {
-                "text": 'Subtitle text goes here',  # Add a subtitle
-                "align": 'left'  # Add alignment for subtitle (left, center, right)
+                "text": "Subtitle text goes here",  # Add a subtitle
+                "align": "left",  # Add alignment for subtitle (left, center, right)
             },
             "xaxis": {
                 "categories": [  # Update categories based on your data
@@ -531,18 +501,16 @@ async def generate_heatmap_chart(developer_id: str, app_id: str):
                     "Category 2",
                     "Category 3",
                     "Category 4",
-                    "Category 5"
+                    "Category 5",
                 ]
             },
             "yaxis": {
-                "title": {
-                    "text": 'Y-axis title goes here'  # Update Y-axis title
-                }
-            }
-        }
+                "title": {"text": "Y-axis title goes here"}  # Update Y-axis title
+            },
+        },
     }
 
-    chart_html = '''
+    chart_html = """
     <html>
         <head>
             <title>Heatmap Chart with ApexCharts</title>
@@ -557,46 +525,48 @@ async def generate_heatmap_chart(developer_id: str, app_id: str):
             </script>
         </body>
     </html>
-    ''' % json.dumps(chart_data)
+    """ % json.dumps(
+        chart_data
+    )
 
     return HTMLResponse(content=chart_html)
 
 
-# To do  
-# Line Chart: This type of chart is commonly used to display trends over time. 
-# It can be useful for showing how certain variables or metrics change over a period of time, 
+# To do
+# Line Chart: This type of chart is commonly used to display trends over time.
+# It can be useful for showing how certain variables or metrics change over a period of time,
 # such as sensor data, temperature readings, or other time-series data.
 # done...
 
-# Bar Chart: A bar chart is a great option for displaying data in categories or groups. 
-# It can be used to compare different data points, such as sensor readings from multiple devices, 
+# Bar Chart: A bar chart is a great option for displaying data in categories or groups.
+# It can be used to compare different data points, such as sensor readings from multiple devices,
 # app usage statistics, or other categorical data.
 # done...
 
-# Pie Chart: A pie chart is a circular chart that is commonly used to display data as a 
-# proportion of a whole. It can be used to show percentage distribution of different data 
+# Pie Chart: A pie chart is a circular chart that is commonly used to display data as a
+# proportion of a whole. It can be used to show percentage distribution of different data
 # points, such as device types, sensor types, or other categorical data.
 # done...
 
-# Area Chart: An area chart is similar to a line chart, but it fills the area under the 
-# line with color, which can help to emphasize the magnitude of change over time. 
+# Area Chart: An area chart is similar to a line chart, but it fills the area under the
+# line with color, which can help to emphasize the magnitude of change over time.
 # It can be useful for showing cumulative data, such as total usage or total revenue.
 # done  may be not required will see later...
 
 # Gauge Chart: A gauge chart is a type of chart that resembles a speedometer or gauge,
-#  and is used to display a single value within a defined range. 
-# It can be used to show real-time data, such as current sensor readings or 
+#  and is used to display a single value within a defined range.
+# It can be used to show real-time data, such as current sensor readings or
 # other single-value metrics.
 # done...
 
 # Radial Chart: A radial chart is a type of chart that displays data in a circular format,
-#  with values represented as points or bars radiating out from a central point. It can be 
+#  with values represented as points or bars radiating out from a central point. It can be
 # used to show multi-dimensional data or relationships between different variables.
 # done...
 
 
 # Scatter Plot: A scatter plot is used to display the relationship between two variables,
-#  with one variable plotted on the x-axis and the other on the y-axis. It can be used to 
+#  with one variable plotted on the x-axis and the other on the y-axis. It can be used to
 # show correlations or patterns in data, such as sensor data from different devices or other
 #  related variables.
 

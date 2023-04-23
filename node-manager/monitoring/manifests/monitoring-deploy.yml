@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring
+  labels:
+    app: monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: monitoring
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: monitoring
+    spec:
+      containers:
+        - name: monitoring
+          image: bhanujggandhi/monitoring
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: monitoring-configmap
+            - secretRef:
+                name: monitoring-secret

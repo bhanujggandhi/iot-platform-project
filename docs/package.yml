@@ -1,0 +1,18 @@
+app_name: myapp1
+base: python:3.10-slim-bullseye
+description: "This is a smart home app"
+author: "Bhanuj"
+email: "abc@def.com"
+entrypoint: ./main.py
+dependencies:
+  bundle: [mongodb, nginx]
+  platform:
+    - analysis
+    - logger
+env:
+  MONGO_URI: http://localhost:2707
+  home_dir: ./
+  SECRET: 2308h320dboifue0fdb200i2dfh02bd
+main_file: main.py
+port: 5000
+version: "1.0"

@@ -1,0 +1,5 @@
+sensor_info:
+  - count: 1
+    type: Temperature
+  - count: 1
+    type: Humidity

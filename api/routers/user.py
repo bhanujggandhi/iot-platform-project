@@ -31,7 +31,7 @@ def verify_password(plain_password, hashed_password):
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password.encode("utf-8"))
 
 
 # ===================================
@@ -56,10 +56,16 @@ def create_user(user: User = Body(...)):
     collection = db.User
     collection.create_index("email", unique=True)
     try:
-        print(user.password)
         user.password = get_password_hash(user.password)
         result = collection.insert_one(user.dict())
-        return {"status_code": 200, "token": signJWT(str(result.inserted_id), user.name, user.role, user.email)}
+        payload = {
+            "id": str(result.inserted_id),
+            "name": user.name,
+            "role": user.role,
+            "email": user.email,
+            "token": "user",
+        }
+        return {"status_code": 200, "token": signJWT(payload)}
     except DuplicateKeyError:
         return {"message": "User with this email already exists.", "status_code": 400}
 
@@ -71,11 +77,25 @@ def user_login(user: UserLogin = Body(...)):
     found_user = collection.find_one({"email": user.email})
 
     if found_user:
-        password = verify_password(user.password, found_user["password"])
+        password = verify_password(
+            user.password.encode("utf-8"), found_user["password"]
+        )
         if not password:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
-        return signJWT(str(found_user["_id"]), found_user["name"], found_user["role"], found_user["email"])
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
+        payload = {
+            "id": str(found_user["_id"]),
+            "name": found_user["name"],
+            "role": found_user["role"],
+            "email": found_user["email"],
+            "token": "user",
+        }
+        return signJWT(payload)
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+    )
 
 
 @router.get("/", dependencies=[Depends(JWTBearer())])

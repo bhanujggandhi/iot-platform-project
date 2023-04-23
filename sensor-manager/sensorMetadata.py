@@ -1,4 +1,3 @@
-
 import requests
 from decouple import config
 from pymongo import MongoClient
@@ -28,14 +27,14 @@ def populateMetadata():
         LattoSensorIDmap = {}
         for i in sensorIDs:
             print("Fetching descriptor for ", i)
-            res = requests.get(descriptorAPI+i)
+            res = requests.get(descriptorAPI + i)
             if res.status_code == 200:
                 print("Success")
                 res = res.json()
                 res = res["Node Location"]
                 Lat = res["Latitude"]
                 long = res["Longitude"]
-                lotlong = str(Lat)+","+str(long)
+                lotlong = str(Lat) + "," + str(long)
                 if lotlong in LattoSensorIDmap:
                     if i not in LattoSensorIDmap[lotlong]:
                         print(lotlong, i, "Existing latlong new sensor ")
@@ -47,8 +46,7 @@ def populateMetadata():
                     LattoSensorIDmap[lotlong] = [i]
         for i in LattoSensorIDmap:
             print(i, LattoSensorIDmap[i])
-            collection.insert_one(
-                {"location": i, "sensorIDs": LattoSensorIDmap[i]})
+            collection.insert_one({"location": i, "sensorIDs": LattoSensorIDmap[i]})
     else:
         print("Error while querying the sensorIDs")
 

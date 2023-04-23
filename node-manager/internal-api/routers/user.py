@@ -77,9 +77,14 @@ def user_login(user: UserLogin = Body(...)):
     found_user = collection.find_one({"email": user.email})
 
     if found_user:
-        password = verify_password(user.password.encode("utf-8"), found_user["password"])
+        password = verify_password(
+            user.password.encode("utf-8"), found_user["password"]
+        )
         if not password:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
         payload = {
             "id": str(found_user["_id"]),
             "name": found_user["name"],
@@ -88,7 +93,9 @@ def user_login(user: UserLogin = Body(...)):
             "token": "user",
         }
         return signJWT(payload)
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+    )
 
 
 @router.get("/", dependencies=[Depends(JWTBearer())])
