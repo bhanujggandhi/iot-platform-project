@@ -1,43 +1,59 @@
-from kafka import KafkaProducer, KafkaConsumer
-from json import dumps, loads
+import json
+from confluent_kafka import Producer, Consumer
 
-KAFKA_IP_PORT = "20.244.37.218:9092"
+KAFKA_CONFIG_FILE = "kafka_setup_config.json"
 
 
 class Produce:
     def __init__(self):
-        self.my_producer = KafkaProducer(
-            bootstrap_servers=[KAFKA_IP_PORT],
-            value_serializer=lambda x: dumps(x).encode("utf-8"),
-        )
+        self.data = json.load(open(KAFKA_CONFIG_FILE))
+        self.kafka_producer_config = self.data["kafka_producer_config"]
+        self.producer = Producer(self.kafka_producer_config)
 
-    def push(self, topic, key, message):
-        try:
-            self.my_producer.send(topic, value=message)
-            self.my_producer.flush(timeout=10)
-        except:
-            print("pass")
+    def delivery_callback(self, err, msg):
+        if err:
+            print("ERROR: Message failed delivery: {}".format(err))
+        else:
             pass
+            # print(
+            #     "Produced event to topic {topic}: key = {key:12} value = {value:12}".format(
+            #         topic=msg.topic(),
+            #         key=msg.key().decode("utf-8"),
+            #         value=msg.value().decode("utf-8"),
+            #     )
+            # )
+
+    def push(self, topic, key, value):
+        self.producer.produce(topic, value, key, on_delivery=self.delivery_callback)
+
+        # Block until the messages are sent.
+        self.producer.poll(10)
+        self.producer.flush()
+
 
 
 class Consume:
     def __init__(self, topic):
-        self.my_consumer = KafkaConsumer(
-            topic,
-            bootstrap_servers=[KAFKA_IP_PORT],
-            group_id=f"group_{topic}",
-            value_deserializer=lambda x: loads(x.decode("utf-8")),
-        )
+        self.topic = topic
+        self.data = json.load(open(KAFKA_CONFIG_FILE))
+        self.kafka_consumer_config = self.data["kafka_consumer_config"]
+        self.kafka_consumer_config["group.id"] = f"group_{self.topic}"
+        self.consumer = Consumer(self.kafka_consumer_config)
+        self.consumer.subscribe([self.topic])
 
     def pull(self):
-        flag = 1
-        x = None
-        while flag:
-            x = self.my_consumer.poll(timeout_ms=1000, max_records=1)
-            if len(x) == 0:
-                flag = 1
-            else:
-                flag = 0
-        for key in x:
-            data = x[key][0].value
-            return {"status": True, "key": "", "value": data}
+        # Checking for message till the message is not found.
+        while True:
+            msg = self.consumer.poll(1.0)
+            if msg is not None:
+                break
+
+        if msg.error():
+            return {"status": False, "key": None, "value": format(msg.error())}
+
+        else:
+            # Extract the (optional) key and value, and print.
+            # topic=msg.topic()
+            key = msg.key().decode("utf-8")
+            value = msg.value().decode("utf-8")
+            return {"status": True, "key": key, "value": value}
