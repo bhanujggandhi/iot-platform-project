@@ -2,8 +2,8 @@ import asyncio
 import os
 import shutil
 import sys
-from typing import List, Union
 import time
+from typing import List, Union
 
 import uvicorn
 from beanie import init_beanie
@@ -11,7 +11,7 @@ from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from routers import deployment, user, apps, features
+from routers import apps, deployment, features, user
 from utils.jwt_handler import decodeJWT, signJWT
 
 MONGO_URI = config("mongoKey")
@@ -42,7 +42,7 @@ Need modify these when in production.
 """
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -60,17 +60,5 @@ async def monitoring_test():
     return {"name": "internal-api", "data": {"timestamp": time.time()}}
 
 
-@app.get("/apitoken/generate/{userid}", tags=["auth"])
-async def generate_token(userid: str):
-    return signJWT(userid)
-
-
-@app.get("/apitoken/verify/{token}", tags=["auth"])
-async def verify_token(token: str):
-    return decodeJWT(token)
-
-
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app", host="0.0.0.0", log_level="info", port=5000, workers=4, reload=True
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=5001, workers=4, reload=True)

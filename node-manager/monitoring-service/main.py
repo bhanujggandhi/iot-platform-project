@@ -2,10 +2,8 @@
 MONITORING SERVICE:
     Assumes:
     * Node Manager is always up
-    * API Manager is up when traffic data is asked
 
     INFORMATION
-    Module Names : Sensor Manager, Node Manager, Monitoring Service.
 
     * MESSAGE format to sent  : {"to": "<your_topic_name>", "src":"topic_monitoring","data": {"operation": "health", "module": "<my_module>"}}
     * MESSAGE format to receive : {"to": "topic_monitoring", "src":"<your_topic_name>","data": {"timestamp": time.time() ,"module": "<my_module>"} }
@@ -29,12 +27,16 @@ from pymongo import MongoClient
 from Messenger import Consume, Produce
 from logger_utils import Logger
 
+ADMIN_NAME = "Mohit Sharma"
+ADMIN_MAILID = "sharmamht19@gmail.com"
+
 PRODUCER_SLEEP_TIME = 10
 CONSUMER_SLEEP_TIME = 1
 API_SLEEP_TIME = 10
 MAIN_SLEEP_TIME = 1
 TRACKING_INTERVAL = 20
 TIMEOUT_THRESHOLD = 60
+
 IP = "127.0.0.1"
 PORT = "8000"
 
@@ -79,7 +81,8 @@ def get_service_info(config_file):
         )
         return {}, []
     except json.JSONDecodeError as e:
-        print(f"Failed to decode configuration file: {config_file}. Error: {e}")
+        print(
+            f"Failed to decode configuration file: {config_file}. Error: {e}")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -88,7 +91,7 @@ def get_service_info(config_file):
         return {}, []
 
 
-# *******************************|    Dealing with Mongo    |******************************
+# ***************************************|    Dealing with Mongo    |**********************************
 
 
 # Function to store module health status in MongoDB
@@ -100,7 +103,8 @@ def store_health_status(module_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to store health status for module '{module_name}'")
+        print(
+            f"Error: {e}. Failed to store health status for module '{module_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -117,7 +121,8 @@ def store_app_health_status(app_name, timestamp, status):
         update = {"$set": {"status": status, "last_updated": timestamp}}
         app_status_collection.update_one(filter, update, upsert=True)
     except Exception as e:
-        print(f"Error: {e}. Failed to store health status for app '{app_name}'")
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -131,7 +136,8 @@ def store_app_health_status(app_name, timestamp, status):
 def get_last_update_timestamp(module_name):
     try:
         # Query MongoDB to get the latest document of the specific module based on module_name field
-        document = collection.find_one({"module_name": module_name})
+        document = collection.find_one(
+            {"module_name": module_name, "status": "active"})
         # Extract and return the timestamp from the document
         if document:
             return document["last_updated"]
@@ -160,7 +166,8 @@ def get_app_last_update_timestamp(app_name):
         else:
             return None
     except Exception as e:
-        print(f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
+        print(
+            f"Error: {e}. Failed to get last update timestamp for app '{app_name}'")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -188,25 +195,33 @@ def init_ModuleStatus_AppStatus():
     for app in app_list:
         store_app_health_status(app["name"], time.time(), "active")
 
+# Refresh app status from APP Collection in a time interval dynamically.
+
+
+def refresh_app_status():
+    app_list = getAppData()
+    for app_name in app_list:
+        try:
+            # Create a document with the module name and timestamp
+            filter = {"name": app_name}
+            # Define the update values
+            update = {"$set": {"status": "active", "last_updated": time.time()}}
+            app_status_collection.update_one(filter, update, upsert=True)
+        except Exception as e:
+            print(
+                f"Error: {e}. Failed to refresh health status for app '{app_name}'")
+            logger.log(
+                service_name=SERVICE_NAME,
+                level=3,
+                msg=f"Error: {e}. Failed to refresh health status for app '{app_name}'",
+                app_name=app_name,
+                user_id=get_developer_mailid(app_name)[0],
+            )
 
 # return the mail id of developer associated with the app.
+
+
 def get_developer_mailid(app_name):
-    try:
-        # Update status of app to inactive in App collection.
-        filter = {"name": app_name}
-        update = {"$set": {"active": False}}
-        app_collection.update_one(filter, update, upsert=True)
-    except Exception as e:
-        print(
-            f"Error: {e}. Failed to store health status for app '{app_name}' in App collection."
-        )
-        logger.log(
-            service_name=SERVICE_NAME,
-            level=3,
-            msg=f"Error: {e}. Failed to store health status for app '{app_name}' in App collection.",
-            app_name=app_name,
-        )
-        return None
     try:
         # Get developer id from App collection associated with this app.
         document = app_collection.find_one({"name": app_name})
@@ -239,7 +254,8 @@ def get_developer_mailid(app_name):
             developer_mailid = str(document["email"])
             developer_name = str(document["name"])
         else:
-            print(f"No user found with id '{developer_id}' in User collection.")
+            print(
+                f"No user found with id '{developer_id}' in User collection.")
             logger.log(
                 service_name=SERVICE_NAME,
                 level=2,
@@ -247,7 +263,8 @@ def get_developer_mailid(app_name):
             )
             return None
     except Exception as e:
-        print(f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
+        print(
+            f"Error: {e}. Failed to get developer mail id for '{app_name}' app.")
         logger.log(
             service_name=SERVICE_NAME,
             level=3,
@@ -260,8 +277,29 @@ def get_developer_mailid(app_name):
     return developer_mailid, developer_name
 
 
+# ***************************************| Notification services |**********************************
+
+
 # send notification to developer if app crashed.
 def notify_to_developer(app_name):
+    try:
+        # Update status of app to inactive in App collection.
+        filter = {"name": app_name}
+        update = {"$set": {"active": False}}
+        update_status = {"$set": {"status": "inactive"}}
+        app_status_collection.update_one(filter, update_status, upsert=True)
+        app_collection.update_one(filter, update, upsert=True)
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to store health status for app '{app_name}' in App and app_status collections."
+        )
+        logger.log(
+            service_name=SERVICE_NAME,
+            level=3,
+            msg=f"Error: {e}. Failed to store health status for app '{app_name}' in App and app_status collections.",
+            app_name=app_name,
+        )
+
     try:
         developer_mailid, developer_name = get_developer_mailid(app_name)
         if not developer_mailid:
@@ -288,10 +326,11 @@ def notify_to_developer(app_name):
         return False
 
     subject = f"URGENT Your app '{app_name}' has crashed!"
-    body = f"Dear '{developer_name}',We regret to inform you that your app, '{app_name}' has crashed."
+    body = f"Dear {developer_name}, \nWe regret to inform you that your app, '{app_name}' has crashed."
 
     key = ""
-    message = {"receiver_email": developer_mailid, "subject": subject, "body": body}
+    message = {"receiver_email": developer_mailid,
+               "subject": subject, "body": body}
 
     try:
         produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
@@ -320,7 +359,39 @@ def notify_to_developer(app_name):
         return False
 
 
-# ************************| Communication with Modules |****************************
+def notify_to_admin(module_name):
+    admin_name = ADMIN_NAME
+    admin_mailid = ADMIN_MAILID
+    subject = f"URGENT, In your platform '{module_name}' has crashed!"
+    body = f"Dear {admin_name}, \nWe regret to inform you that In your platform, module '{module_name}' has crashed please try to restart."
+    key = ""
+    message = {"receiver_email": admin_mailid,
+               "subject": subject, "body": body}
+
+    try:
+        produce.push(TOPIC_NOTIFICATION, key, json.dumps(message))
+        print(
+            f"Notification sent to Admin '{admin_mailid}' for module '{module_name}'."
+        )
+        logger.log(
+            service_name=SERVICE_NAME,
+            level=1,
+            msg=f"Notification sent to admin '{admin_mailid}' for module '{module_name}'."
+        )
+        return True
+    except Exception as e:
+        print(
+            f"Error: {e}. Failed to send notification to admin '{admin_mailid}' for module '{module_name}'."
+        )
+        logger.log(
+            service_name=SERVICE_NAME,
+            level=3,
+            msg=f"Error: {e}. Failed to send notification to admin '{admin_mailid}' for module '{module_name}'."
+        )
+        return False
+
+
+# ***************************************| Communication with Modules |**********************************
 
 
 def appHealthCheck():
@@ -328,9 +399,16 @@ def appHealthCheck():
     Health check of Applications deployed on the platform which are currently active.
     """
     print("App health check started... ")
-    while True:
-        app_list = getAppData()
 
+    flag = 1
+    while True:
+        if (flag == 0):
+            refresh_app_status()
+            print("Refresh cycle: Application status has been refreshed.")
+        else:
+            flag = (flag+1) % 4
+
+        app_list = getAppData()
         for app in app_list:
             app_api_url = f"http://{app['ip']}:{app['port']}/ping"
             try:
@@ -339,8 +417,6 @@ def appHealthCheck():
 
                 # store app health status in App_Status Collection
                 store_app_health_status(app["name"], timestamp, "active")
-
-                return response_dict
 
             except Exception as e:
                 print(f"Error {e} in appHealthCheck().")
@@ -351,7 +427,6 @@ def appHealthCheck():
                     app_name=app["name"],
                     user_id=get_developer_mailid(app["name"])[0],
                 )
-                return dict()
 
         time.sleep(API_SLEEP_TIME)
 
@@ -371,7 +446,6 @@ def apiHealthCheck():
                 timestamp = response_dict["time_stamp"]
                 # Store module health status in MongoDB
                 store_health_status(module_name, float(timestamp), "active")
-                return response_dict
 
             except Exception as e:
                 print(f"Error {e} in apiHealthCheck().")
@@ -380,7 +454,6 @@ def apiHealthCheck():
                     level=3,
                     msg=f"Error {e} in apiHealthCheck().",
                 )
-                return dict()
 
         time.sleep(API_SLEEP_TIME)
 
@@ -389,7 +462,7 @@ def postHealthCheck():
     """
     post health messages to all the module's
     """
-    print("Post health check messages started... ")
+    print("Post health check started... ")
     # topic_names = [value["topic_name"] for value in SERVICES.values()]
 
     if not MODULE_LIST:
@@ -456,7 +529,8 @@ def getHealthStatus():
                 # Check if module_name and timestamp are present in the message
                 if module_name is not None and timestamp is not None:
                     # Store module health status in MongoDB
-                    store_health_status(module_name, float(timestamp), "active")
+                    store_health_status(
+                        module_name, float(timestamp), "active")
                 else:
                     print(
                         "Error: Required fields are missing in the health status message."
@@ -477,14 +551,16 @@ def getHealthStatus():
             time.sleep(CONSUMER_SLEEP_TIME)
 
 
-# ***********| Monitoring of Modules |************
+# *********************************| Monitoring of Modules |************************************
 
 
 def timeOutTracker():
     """
     Method that keep track of all the modules to be monitored
     """
+    time.sleep(TRACKING_INTERVAL)
     print("Tracker to monitor modules started....")
+
     while True:
         try:
             # Check if any module has not responded for a long time
@@ -493,7 +569,8 @@ def timeOutTracker():
             # Iterate through the list of modules
             for module_name in MODULE_LIST:
                 try:
-                    last_update_timestamp = get_last_update_timestamp(module_name)
+                    last_update_timestamp = get_last_update_timestamp(
+                        module_name)
 
                     if (
                         last_update_timestamp
@@ -512,9 +589,7 @@ def timeOutTracker():
                         store_health_status(
                             module_name, last_update_timestamp, "inactive"
                         )
-                        """
-                        TO DO : some more action when required
-                        """
+                        notify_to_admin(module_name)
                 except Exception as e:
                     print(
                         f"Error: {e}. Failed to monitor module '{module_name}' for timeout."
@@ -528,9 +603,12 @@ def timeOutTracker():
                     continue
 
             # Iterate through the list of apps
-            for app_name in getAppData():
+            app_list = getAppData()
+            for app in app_list:
+                app_name = app["name"]
                 try:
-                    last_update_timestamp = get_app_last_update_timestamp(app_name)
+                    last_update_timestamp = get_app_last_update_timestamp(
+                        app_name)
 
                     if (
                         last_update_timestamp
@@ -539,12 +617,12 @@ def timeOutTracker():
                     ):
                         # Take action and send notification to admin/dev
                         print(
-                            f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev.."
+                            f"App '{app_name}' has not responded for a long time! Notification sent to developer.."
                         )
                         logger.log(
                             service_name=SERVICE_NAME,
                             level=2,
-                            msg=f"App '{app_name}' has not responded for a long time! Notification sent to admin/dev..",
+                            msg=f"App '{app_name}' has not responded for a long time! Notification sent to developer..",
                             app_name=app_name,
                             user_id=get_developer_mailid(app_name)[0],
                         )
@@ -593,9 +671,8 @@ if __name__ == "__main__":
     appHealth_thread = threading.Thread(target=appHealthCheck, args=())
 
     # Create a thread for Api healthcheck  at regular intervals and update the timeout queue
-    # apiHealth_thread = threading.Thread(target=apiHealthCheck, args=())
+    apiHealth_thread = threading.Thread(target=apiHealthCheck, args=())
 
-    time.sleep(TRACKING_INTERVAL)
     # Create a timeout tracker to keep track of the values in the timeout queue
     tracker_thread = threading.Thread(target=timeOutTracker, args=())
 
@@ -603,7 +680,7 @@ if __name__ == "__main__":
     producer_thread.start()
     appHealth_thread.start()
     consumer_thread.start()
-    # apiHealth_thread.start()
+    apiHealth_thread.start()
     tracker_thread.start()
 
     try:
@@ -615,5 +692,5 @@ if __name__ == "__main__":
         producer_thread.join()
         consumer_thread.join()
         appHealth_thread.join()
-        # apiHealth_thread.join()
+        apiHealth_thread.join()
         tracker_thread.join()

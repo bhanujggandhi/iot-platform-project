@@ -205,7 +205,7 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str
     return {"status": 200, "data": "We have removed your app successfully"}
 
 
-@router.post("/{appid}/logs", dependencies=[Depends(JWTBearer())])
+@router.get("/{appid}/logs", dependencies=[Depends(JWTBearer())])
 async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = None):
     curr_user = decodeJWT(token)
     curr_app = app_collection.find_one(
@@ -229,12 +229,13 @@ async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = 
         output += f'<br>{document["timestamp"]} | {document["level"]} <b>({document["app_name"]}, {document["user_id"]})</b>: {document["msg"]}'
 
     HTML_output = (
-        """        
+        f"""        
     <html>
     <head>
-        LOGS
+        <title>{app_name} Logs</title>
     </head>
     <body>
+    <h2>{app_name} Logs</h2>
     """
         + output
         + """
