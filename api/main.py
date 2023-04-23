@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from typing import List, Union
+import time
 
 import uvicorn
 from beanie import init_beanie
@@ -54,9 +55,9 @@ app.include_router(apps.router, prefix="/apps", tags=["Deployed App"])
 app.include_router(features.router, prefix="/features", tags=["Platform Features"])
 
 
-@app.get("/", tags=["test"])
-async def read_root():
-    return {"Hello": "World"}
+@app.get("/ping", tags=["test"])
+async def monitoring_test():
+    return {"name": "internal-api", "data": {"timestamp": time.time()}}
 
 
 @app.get("/apitoken/generate/{userid}", tags=["auth"])
