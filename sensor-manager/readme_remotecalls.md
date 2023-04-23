@@ -17,7 +17,7 @@ Example Output from fetchdata function:
 ```json
     {
         "WM-WF-PH03-00": {
-            "fields": ["Timestamp", "Flowrate", "Total Flow", "Pressure", "Pressure Voltage"], 
+            "fields": ["Timestamp", "Flowrate", "Total Flow", "Pressure", "Pressure Voltage","VersionInfo"], 
             "data": [{"created_at": "2023-01-24T02:55:52+05:30", "field1": 0.0, "field2": 9041.69, "field3": 0.0, "field4": 0.7823, "field5": "V6.0.0"}, 
             {"created_at": "2023-01-24T02:54:13+05:30", "field1": 0.0, "field2": 9041.69, "field3": 0.0, "field4": 0.769409, "field5": "V6.0.0"} ]
         }
@@ -31,7 +31,7 @@ Example Output from fetchdata function:
 | ---  | --- |
 | WM-WF-PH03-00  | Water Quality |
 | SL-VN03-00  | Solar Monitoring |
-| WM-WF-PH03-00  | Smart Room Energy Monitoring |
+| SR-EM-KH04-00  | Smart Room Energy Monitoring |
 
 
 

@@ -197,9 +197,9 @@ def main():
         "data_flag": True
     }
     data = fetchdata(parms)
-    # with open("data.json", "w") as f:
-    #     f.write(json.dumps(data))
-    print(data)
+    with open("data.json", "w") as f:
+        f.write(json.dumps(data))
+    # print(data)
 
 
 if __name__ == "__main__":
