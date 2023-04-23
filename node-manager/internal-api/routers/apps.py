@@ -27,7 +27,8 @@ db = client["platform"]
 app_collection = db.App
 user_collection = db.User
 
-
+loggerdb = client["LoggerDB"]
+log_collection = loggerdb.loggingCollection
 # ===================================
 # Database decoding utility
 
@@ -202,6 +203,47 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str
     produce.push("topic_node_manager", "", json.dumps(message))
 
     return {"status": 200, "data": "We have removed your app successfully"}
+
+
+@router.post("/{appid}/logs", dependencies=[Depends(JWTBearer())])
+async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = None):
+    curr_user = decodeJWT(token)
+    curr_app = app_collection.find_one(
+        {"name": appname, "user": ObjectId(curr_user["id"])}
+    )
+    if not curr_app:
+        return {
+            "status": 404,
+            "data": f"We have no app deployed in the name of {appname}",
+        }
+
+    if str(curr_app["user"]) != curr_user["id"]:
+        return {"status": 401, "data": f"You are not authorized to do that"}
+
+    # find all data in DB for given app name
+    cursor = log_collection.find({"app_name": app_name}, sort=[("timestamp", 1)])
+
+    output = ""
+    # Sort the documents on the basis of their created time and display onto stdout
+    for document in cursor:
+        output += f'<br>{document["timestamp"]} | {document["level"]} <b>({document["app_name"]}, {document["user_id"]})</b>: {document["msg"]}'
+
+    HTML_output = (
+        """        
+    <html>
+    <head>
+        LOGS
+    </head>
+    <body>
+    """
+        + output
+        + """
+    </body>
+    </html>
+    """
+    )
+
+    return HTMLResponse(content=HTML_output, status_code=200)
 
 
 @router.get("/app/{app_name:path}")
