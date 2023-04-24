@@ -1,26 +1,8 @@
 {
-  "Sensor Manager": {
-    "topic_name": "topic_sensor_manager_health"
-  },
   "Node Manager": {
     "topic_name": "topic_node_manager_health"
   },
   "Notification Manager": {
     "topic_name": "topic_notification_health"
-  },
-  "Analytics Module": {
-    "topic_name": "topic_analytics_health"
-  },
-  "Bootstrap Module": {
-    "topic_name": "topic_bootstrap_health"
-  },
-  "Internal API Module": {
-    "topic_name": "topic_internal_api_health"
-  },
-  "Sensor Data Module": {
-    "topic_name": "topic_sensor_data_health"
-  },
-  "Workflow Manager": {
-    "topic_name": "topic_workflow_manager_health"
   }
 }

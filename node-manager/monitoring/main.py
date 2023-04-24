@@ -30,15 +30,15 @@ from logger_utils import Logger
 ADMIN_NAME = "Bhanuj Gandhi"
 ADMIN_MAILID = "gandhibhanuj@gmail.com"
 
-PRODUCER_SLEEP_TIME = 10
+PRODUCER_SLEEP_TIME = 20
 CONSUMER_SLEEP_TIME = 1
-API_SLEEP_TIME = 10
+API_SLEEP_TIME = 30
 MAIN_SLEEP_TIME = 1
-TRACKING_INTERVAL = 20
-TIMEOUT_THRESHOLD = 60
+TRACKING_INTERVAL = 60
+TIMEOUT_THRESHOLD = 121
 
 IP = "127.0.0.1"
-PORT = "8000"
+PORT = "5000"
 
 # kafka topics and other related info.
 MY_TOPIC = "topic_monitoring"
@@ -431,10 +431,11 @@ def apiHealthCheck():
     while True:
         for module_name in API_MODULE_LIST:
             """need to change this api_url according to api provided by the module for health check"""
-            api_url = f"http://{IP}:{PORT}/ping/{module_name}"
+            api_url = f"http://internal-api:5000/ping/{module_name}"
 
             try:
                 response_dict = requests.get(api_url).json()
+                print(response_dict)
                 timestamp = response_dict["time_stamp"]
                 # Store module health status in MongoDB
                 store_health_status(module_name, float(timestamp), "active")
