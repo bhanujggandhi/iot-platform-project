@@ -12,136 +12,49 @@ import time
 from Messenger import Consume, Produce
 from threading import Thread
 from time import sleep
+from remotecalls import *
 
 Headers = {"X-M2M-Origin": "admin:admin", "Content-Type": "application/json;ty=4"}
-
 mongoKey = config("mongoKey")
-
 produce = Produce()
-
-
-def produceError(target, message):
-    response = {"status": 400, "data": message}
-    key = ""
-    produce.push(target, key, json.dumps(response))
 
 
 def utilise_message(value):
     value = json.loads(value)
+    print(value)
 
-    target, fetchType = None, None
-    try:
-        target = value["src"]
-        fetchType = value["fetchType"]
-    except:
-        error_message = "Invalid Request"
-        produceError(target, error_message)
-        return
+    src = value['src']
+    readingtype, lat, long, sensorIDs, starttime, numofsensors, data_flag = '', '', '', [], '', 1, True
 
-    def fetchTimeSeries(sensorid: str, startTime: int, endTime: int):
-        try:
-            client = MongoClient(mongoKey)
-            db = client.SensorDB
-            collection = db.SensorData
-            data = collection.find_one({"sensorid": sensorid})
-        except:
-            return {"status": 400, "data": "Unable to connect to MongoDB"}
+    if 'readingtype' in value:
+        readingtype = value['readingtype']
+    if 'starttime' in value:
+        starttime = value['starttime']
+    if 'numofsensors' in value:
+        numofsensors = value['numofsensors']
+    if 'lat' in value:
+        lat = value['lat']
+    if 'long' in value:
+        long = value['long']
+    if 'sensorIDs' in value:
+        sensorIDs = value['sensorIDs']
+    if 'data_flag' in value:
+        data_flag = value['data_flag']
+    
 
-        if data != None:
-            timeSeriesData = []
-            data = data["data"]
-            for datapoint in data:
-                timestamp = int(datapoint[1:-1].split(",")[0])
-                if (startTime <= timestamp) and (timestamp <= endTime):
-                    timeSeriesData.append(datapoint)
+    parms = {
+        "readingtype": readingtype,
+        "starttime": starttime,
+        "numofsensors": numofsensors,
+        "lat": lat,
+        "long": long,
+        "sensorIDs": sensorIDs,
+        "data_flag": data_flag
+    }
 
-            if len(timeSeriesData) != 0:
-                return {"status": 200, "data": timeSeriesData}
-            else:
-                return {"status": 400, "data": "No sensor data found"}
-
-        else:
-            return {"status": 400, "data": "Sensor id not valid"}
-
-    def fetchInstant(sensorid: str):
-        try:
-            client = MongoClient(mongoKey)
-            db = client.SensorDB
-            collection = db.SensorData
-            data = collection.find_one({"sensorid": sensorid})
-        except:
-            return {"status": 400, "data": "Unable to connect to MongoDB"}
-
-        if data != None:
-            instantData = data["data"][-1]
-
-            if len(instantData) != 0:
-                return {"status": 200, "data": instantData}
-            else:
-                return {"status": 400, "data": "No sensor data found"}
-
-        else:
-            return {"status": 400, "data": "Sensor id not valid"}
-
-    def fetchRealTime(sensorid: str, duration: int = 1):
-        try:
-            client = MongoClient(mongoKey)
-            db = client.SensorDB
-            collection = db.SensorData
-            data = collection.find_one({"sensorid": sensorid})
-        except:
-            return {"status": 400, "data": "Unable to connect to MongoDB"}
-
-        if data != None:
-            realTimeData = []
-
-            while duration:
-                data = collection.find_one({"sensorid": sensorid})["data"]
-                realTimeData.append(data[-1])
-                duration -= 1
-                time.sleep(1)
-
-            if len(realTimeData) != 0:
-                return {"status": 200, "data": realTimeData}
-            else:
-                return {"status": 400, "data": "No sensor data found"}
-
-        else:
-            return {"status": 400, "data": "Sensor id not valid"}
-
-    if fetchType == "TimeSeries":
-        try:
-            sensorid = value["sensorid"]
-            startTime = value["startTime"]
-            endTime = value["endTime"]
-
-            response = fetchTimeSeries(sensorid, startTime, endTime)
-            produce.push(target, "", json.dumps(response))
-        except:
-            error_message = "Invalid Request"
-            produceError(target, error_message)
-            return
-    elif fetchType == "Instant":
-        try:
-            sensorid = value["sensorid"]
-
-            response = fetchInstant(sensorid)
-            produce.push(target, "", json.dumps(response))
-        except:
-            error_message = "Invalid Request"
-            produceError(target, error_message)
-            return
-    elif fetchType == "RealTime":
-        try:
-            sensorid = value["sensorid"]
-            duration = value["duration"]
-
-            response = fetchRealTime(sensorid, duration)
-            produce.push(target, "", json.dumps(response))
-        except:
-            error_message = "Invalid Request"
-            produceError(target, error_message)
-            return
+    print('parms', parms)
+    response = fetchdata(parms)
+    produce.push(src, "", json.dumps(response))
 
 
 TOPIC = "topic_sensor_manager"
