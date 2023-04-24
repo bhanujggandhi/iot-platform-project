@@ -537,6 +537,7 @@ if __name__ == "__main__":
     print("Node Manager Started")
     consume = Consume(TOPIC)
     thread = threading.Thread(target=heartbeat_service.start)
+    thread.daemon = True
     thread.start()
     while True:
         resp = consume.pull()
