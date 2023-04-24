@@ -11,7 +11,7 @@ from decouple import config
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from routers import deployment, user, apps, features
+from routers import deployment, user, apps, features, analytics
 from utils.jwt_handler import decodeJWT, signJWT
 
 MONGO_URI = config("mongoKey")
@@ -53,6 +53,7 @@ app.include_router(user.router, prefix="/user", tags=["user"])
 app.include_router(deployment.router, prefix="/deploy", tags=["deployement"])
 app.include_router(apps.router, prefix="/apps", tags=["Deployed App"])
 app.include_router(features.router, prefix="/features", tags=["Platform Features"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 
 
 @app.get("/", tags=["test"])
@@ -67,5 +68,5 @@ async def monitoring_test():
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app", host="0.0.0.0", log_level="info", port=5000, workers=4, reload=True
+        "main:app", host="0.0.0.0", log_level="info", port=5001, workers=4, reload=True
     )
