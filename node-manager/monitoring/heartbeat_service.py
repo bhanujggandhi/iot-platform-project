@@ -11,6 +11,7 @@ INSTRUCTIONS:
     ```
     import threading
     from heartbeat_service import HeartbeatService
+    import atexit
     ```
 
 2. Initialize the HeartbeatService object with your Kafka topic name and your service name:
@@ -26,6 +27,7 @@ INSTRUCTIONS:
     ```
     # Create a new thread and start the HeartbeatService instance
     thread = threading.Thread(target=heartbeat_service.start)
+    thread.daemon = True
     thread.start()
     ```
 """
@@ -42,6 +44,7 @@ class HeartbeatService:
         self.logger = Logger()
         self.consume = Consume(self.topic)
         self.produce = Produce()
+        self.running = False
 
     def utilise_message(self, value):
         value = json.loads(value)
@@ -72,7 +75,8 @@ class HeartbeatService:
             self.logger.log(service_name=self.service_name, level=2, msg=msg)
 
     def heartbeat_service(self):
-        while True:
+        print("Heartbeat service started... ")
+        while self.running:
             resp = self.consume.pull()
             if resp["status"] == False:
                 msg = f"Error while consuming from Kafka Topic : {self.topic}. Error: {resp['value']}"
@@ -80,11 +84,16 @@ class HeartbeatService:
                 self.logger.log(service_name=self.service_name, level=2, msg=msg)
             else:
                 self.utilise_message(resp["value"])
+        print("Heartbeat service stopped... ")
 
     def start(self):
         try:
+            self.running = True
             self.heartbeat_service()
         except Exception as e:
             msg = f"Error while running Heartbeat Service. Error: {str(e)}"
             print(msg)
             self.logger.log(service_name=self.service_name, level=2, msg=msg)
+
+    def stop(self):
+        self.running = False
