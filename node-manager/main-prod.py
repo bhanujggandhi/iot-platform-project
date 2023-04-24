@@ -7,7 +7,7 @@ produce = Produce()
 message = {
     "service": "platform",
     "app": "",
-    "operation": "destroy",
+    "operation": "init",
     "src": "topic_bootstrap",
     "appid": "",
     "userid": "",

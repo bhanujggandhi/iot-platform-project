@@ -258,7 +258,7 @@ async def get_logs(token: Annotated[str, Depends(JWTBearer())], appname: str):
     return json_res
 
 
-@router.get("/{appname:path}")
+@router.get("/app/{appname:path}")
 async def apps(appname: str = Path(...)):
     print(appname)
     arr = appname.split("/")

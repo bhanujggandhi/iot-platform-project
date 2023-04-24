@@ -68,5 +68,5 @@ async def monitoring_test():
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app", host="0.0.0.0", log_level="info", port=5001, workers=4, reload=True
+        "main:app", host="0.0.0.0", log_level="info", port=5000, workers=4, reload=True
     )
