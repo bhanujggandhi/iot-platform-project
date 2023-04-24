@@ -45,6 +45,7 @@ class HeartbeatService:
 
     def utilise_message(self, value):
         value = json.loads(value)
+        print(value)
         # If the message consumed is for health checkup.
         if "to" in value.keys() and "src" in value.keys() and "data" in value.keys():
             if value["src"] == "topic_monitoring":
