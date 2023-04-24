@@ -52,7 +52,7 @@ logger = Logger()  # Instantiate logger
 
 # module information
 MODULE_LIST = []  # modules which uses kafka
-API_MODULE_LIST = []  # modules which are not using kafka
+API_MODULE_LIST = ["internal-api"]  # modules which are not using kafka
 CONFIG_FILE_PATH = "./topic_info.json"
 SERVICES = []
 
@@ -443,7 +443,7 @@ def apiHealthCheck():
         for module_name in API_MODULE_LIST:
             if is_active(module_name):
                 """need to change this api_url according to api provided by the module for health check"""
-                api_url = f"http://{module_name}/ping"
+                api_url = f"http://{module_name}:5000/ping/{module_name}"
 
                 try:
                     response_dict = requests.get(api_url).json()
