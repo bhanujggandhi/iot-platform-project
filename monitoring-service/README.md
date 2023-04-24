@@ -33,7 +33,7 @@ Use this module to implement a heartbeat service that responds to health check r
 
 ### Instructions
 
-1. Copy and paste `logger_utils.py`, `Messenger.py` and `heartbeat_service.py` into your directory where `main.py` is running.
+1. Copy and paste `kafka_setup_config.json`, `logger_utils.py`, `Messenger.py` and `heartbeat_service.py` into your directory where `main.py` is running.
 
 2. Import the following:
 
@@ -57,5 +57,6 @@ heartbeat_service = HeartbeatService(TOPIC, SERVICE_NAME)
 ```py
 # Create a new thread and start the HeartbeatService instance
 thread = threading.Thread(target=heartbeat_service.start)
+thread.daemon = True
 thread.start()
 ```

@@ -74,8 +74,8 @@ This project provides a set of RESTful APIs for generating various analytics cha
   - `developer_id` (required): The ID of the developer.
   - `app_id` (required): The ID of the app.
 
-## Command to run application with uvicorn
+## Command to run application with uvicorn  
 
 ```bash
-    python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 9001
 ```

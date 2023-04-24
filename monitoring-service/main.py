@@ -30,20 +30,23 @@ from logger_utils import Logger
 ADMIN_NAME = "Mohit Sharma"
 ADMIN_MAILID = "sharmamht19@gmail.com"
 
-PRODUCER_SLEEP_TIME = 10
-CONSUMER_SLEEP_TIME = 1
-API_SLEEP_TIME = 10
-MAIN_SLEEP_TIME = 1
-TRACKING_INTERVAL = 20
-TIMEOUT_THRESHOLD = 60
+# Load configuration from config_intervals.json file
+with open('config_intervals.json', 'r') as f:
+    config_int = json.load(f)
 
-IP = "127.0.0.1"
-PORT = "8000"
+# Get configuration values
+PRODUCER_SLEEP_TIME = config_int['PRODUCER_SLEEP_TIME']
+CONSUMER_SLEEP_TIME = config_int['CONSUMER_SLEEP_TIME']
+API_SLEEP_TIME = config_int['API_SLEEP_TIME']
+MAIN_SLEEP_TIME = config_int['MAIN_SLEEP_TIME']
+TRACKING_INTERVAL = config_int['TRACKING_INTERVAL']
+TIMEOUT_THRESHOLD = config_int['TIMEOUT_THRESHOLD']
+IP = config_int['IP']
+PORT = config_int['PORT']
+MY_TOPIC = config_int['MY_TOPIC']
+TOPIC_NOTIFICATION = config_int['TOPIC_NOTIFICATION']
+SERVICE_NAME = config_int['SERVICE_NAME']
 
-# kafka topics and other related info.
-MY_TOPIC = "topic_monitoring"
-TOPIC_NOTIFICATION = "topic_notification"
-SERVICE_NAME = "monitoring-service"
 produce = Produce()  # Instantiate Kafka producer
 logger = Logger()  # Instantiate logger
 
@@ -175,7 +178,7 @@ def get_app_last_update_timestamp(app_name):
 
 # get list of all the active apps.
 def getAppData():
-    return list(app_collection.find({"active": True}))
+    return list(collection.find({"active": True}))
 
 
 # init Module_Status and App_Status collection in MongoDb
@@ -270,6 +273,10 @@ def get_developer_mailid(app_name):
 
     return developer_mailid, developer_name
 
+# check module is active or not.
+def is_active(module_name):
+    active_modules = app_collection.count_documents({"module_name": module_name, "status": "active"})
+    return active_modules > 0
 
 # ***************************************| Notification services |**********************************
 
@@ -422,7 +429,6 @@ def appHealthCheck():
 
         time.sleep(API_SLEEP_TIME)
 
-
 def apiHealthCheck():
     """
     Health check of modules which does not use Kafka, through API
@@ -430,22 +436,23 @@ def apiHealthCheck():
     print("Api health Check started... ")
     while True:
         for module_name in API_MODULE_LIST:
-            """need to change this api_url according to api provided by the module for health check"""
-            api_url = f"http://{IP}:{PORT}/ping/{module_name}"
+            if is_active(module_name):
+                """need to change this api_url according to api provided by the module for health check"""
+                api_url = f"http://{IP}:{PORT}/ping/{module_name}"
 
-            try:
-                response_dict = requests.get(api_url).json()
-                timestamp = response_dict["time_stamp"]
-                # Store module health status in MongoDB
-                store_health_status(module_name, float(timestamp), "active")
+                try:
+                    response_dict = requests.get(api_url).json()
+                    timestamp = response_dict["time_stamp"]
+                    # Store module health status in MongoDB
+                    store_health_status(module_name, float(timestamp), "active")
 
-            except Exception as e:
-                print(f"Error {e} in apiHealthCheck().")
-                logger.log(
-                    service_name=SERVICE_NAME,
-                    level=3,
-                    msg=f"Error {e} in apiHealthCheck().",
-                )
+                except Exception as e:
+                    print(f"Error: '{module_name}' is not responding in apiHealthCheck().")
+                    logger.log(
+                        service_name=SERVICE_NAME,
+                        level=3,
+                        msg=f"Error {e} in apiHealthCheck().",
+                    )
 
         time.sleep(API_SLEEP_TIME)
 

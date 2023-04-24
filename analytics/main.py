@@ -6,7 +6,7 @@ from decouple import config
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from Messenger import Consume, Produce
-# from remotecalls import *
+from remotecalls import *
 import numpy as np
 from typing import List
 from datetime import datetime
@@ -15,12 +15,13 @@ import threading
 from heartbeat_service import HeartbeatService
 
 TOPIC = 'topic_analytics'
-TOPIC_HEALTH = "topic_analytics_health" 
+TOPIC_HEALTH = "topic_analytics_health"
 SERVICE_NAME = "Analytics Module"
 produce = Produce()
 consume = Consume(TOPIC)
 
 logger = Logger()  # Instantiate logger
+
 
 # Initialize MongoDB client
 mongokey = config("mongoKey")
@@ -35,15 +36,14 @@ user_collection = platform_db.User
 app_collection = platform_db.App
 sensor_db = client["SensorDB"]
 
-# checks if the developer exists or not
-
-
 # Create a new instance of the HeartbeatService class
 heartbeat_service = HeartbeatService(TOPIC_HEALTH, SERVICE_NAME)
 # Create a new thread and start the HeartbeatService instance
 thread = threading.Thread(target=heartbeat_service.start)
+thread.daemon = True
 thread.start()
 
+# checks if the developer exists or not
 def is_valid_developer(developer_id):
     try:
         # check if the user exists in the user collection
@@ -164,15 +164,88 @@ def get_sensor_types(app_id):
 # developer_apps = get_apps(developer_id)
 
 
-def fetchdata(msg):
-    print(msg)
-    produce.push('topic_sensor_manager', key='', value=json.dumps(msg))
-    obj = consume.pull()
-    print(obj['value'])
-    obj = json.loads(obj['value'])
-    print(obj['data'])
-    return obj
+# def fetchdata(msg):
+#     print(msg)
+#     produce.push('topic_sensor_manager', key='', value=json.dumps(msg))
+#     obj = consume.pull()
+#     print(obj['value'])
+#     obj = json.loads(obj['value'])
+#     print(obj['data'])
+#     return obj
 
+
+# def get_sensor_data(sensor_type: str, count: int = 3, numTimestamps: int = 5):
+#     """
+#     Get sensor data for a given sensor type and number of sensors
+
+#     Args:
+#     - sensor_type: str - the type of sensor to fetch data for
+#     - count: int - the number of sensors to fetch data for
+#     - numTimestamps: int - the number of timestamps to fetch data for
+
+#     Returns:
+#     - List[str], dict - a list of sensor IDs and a dictionary of sensor data
+#     """
+#     try:
+#         # Fetch sensor IDs for the given sensor type
+#         sensor_ids = fetchdata({
+#             "src": TOPIC,
+#             "readingtype": sensor_type,
+#             "numofsensors": count,
+#             "data_flag": False
+#         })
+
+#         # Initialize data dictionary
+#         sensor_data = {}
+#         inner_dict_arr = []
+
+#         # Fetch data for each sensor ID
+#         # obj = fetchdata({
+#         #     "numofsensors": count,
+#         #     "sensorIDs": sensor_ids
+#         # })
+#         obj = fetchdata({
+#             "src": TOPIC,
+#             "numofsensors": count,
+#             "sensorIDs": sensor_ids
+#         }
+#         )
+#         json_formatted_str = json.dumps(obj['data'], indent=4)
+
+#         # Process data for each sensor ID
+#         for sensor_id in sensor_ids:
+#             field_names = obj[sensor_id]["fields"]
+#             data = obj[sensor_id]["data"]
+#             data = data[:numTimestamps]
+#             field_values, values = [], []
+#             for i in range(numTimestamps):
+#                 curr_entry_values = list(data[i].values())[
+#                     :-1]  # ignoring the version value
+#                 values.append(curr_entry_values)
+#             field_values = np.array(values).T
+#             field_values = field_values.tolist()
+#             inner_dict = {k: v for k, v in zip(field_names, field_values)}
+#             inner_dict_arr.append(inner_dict)
+
+#         # Populate data dictionary with processed data
+#         sensor_data = {k: v for k, v in zip(sensor_ids, inner_dict_arr)}
+
+#         # Save data to file (for testing purposes)
+#         with open("response.json", "w") as f:
+#             f.write(json_formatted_str)
+#         with open("final_response.json", "w") as f:
+#             f.write(json.dumps(sensor_data, indent=4))
+
+#         # Return sensor IDs and data dictionary
+#         return sensor_ids, sensor_data
+#     except Exception as e:
+#         logger.log(
+#             service_name=SERVICE_NAME,
+#             level=3,
+#             msg=f"Error fetching sensor data: {str(e)}"
+#         )
+#         print(f"Error fetching sensor data: {str(e)}")
+#         return [], {}
 
 def get_sensor_data(sensor_type: str, count: int = 3, numTimestamps: int = 5):
     """
@@ -184,12 +257,11 @@ def get_sensor_data(sensor_type: str, count: int = 3, numTimestamps: int = 5):
     - numTimestamps: int - the number of timestamps to fetch data for
 
     Returns:
-    - List[str], dict - a list of sensor IDs and a dictionary of sensor data
+    - Tuple[List[str], dict] - a tuple containing a list of sensor IDs and a dictionary of sensor data
     """
     try:
         # Fetch sensor IDs for the given sensor type
         sensor_ids = fetchdata({
-            "src": TOPIC,
             "readingtype": sensor_type,
             "numofsensors": count,
             "data_flag": False
@@ -200,17 +272,11 @@ def get_sensor_data(sensor_type: str, count: int = 3, numTimestamps: int = 5):
         inner_dict_arr = []
 
         # Fetch data for each sensor ID
-        # obj = fetchdata({
-        #     "numofsensors": count,
-        #     "sensorIDs": sensor_ids
-        # })
-        json_formatted_str = fetchdata({
-            "src": TOPIC,
+        obj = fetchdata({
             "numofsensors": count,
             "sensorIDs": sensor_ids
-        }
-        )
-        # json_formatted_str = json.dumps(obj['data'], indent=4)
+        })
+        json_formatted_str = json.dumps(obj, indent=4)
 
         # Process data for each sensor ID
         for sensor_id in sensor_ids:
@@ -239,11 +305,6 @@ def get_sensor_data(sensor_type: str, count: int = 3, numTimestamps: int = 5):
         # Return sensor IDs and data dictionary
         return sensor_ids, sensor_data
     except Exception as e:
-        logger.log(
-            service_name=SERVICE_NAME,
-            level=3,
-            msg=f"Error fetching sensor data: {str(e)}"
-        )
         print(f"Error fetching sensor data: {str(e)}")
         return [], {}
 
@@ -1004,6 +1065,7 @@ async def generate_heatmap_chart2(developer_id, app_id):
             msg=f"Error : {str(e)}. in 'Solar Monitor - heatmap api' "
         )
         return HTMLResponse(content="Error: Something missing/wrong", status_code=500)
+
 
 
 # ******************************||     for future use only   ||**************************************
