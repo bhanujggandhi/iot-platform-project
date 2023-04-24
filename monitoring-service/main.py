@@ -438,7 +438,7 @@ def apiHealthCheck():
         for module_name in API_MODULE_LIST:
             if is_active(module_name):
                 """need to change this api_url according to api provided by the module for health check"""
-                api_url = f"http://{IP}:{PORT}/ping/{module_name}"
+                api_url = f"http://{module_name}/ping"
 
                 try:
                     response_dict = requests.get(api_url).json()
