@@ -28,6 +28,8 @@ service_collection = db.Service
 sensor_db = client["SensorDB"]
 metadata_collection = sensor_db.SensorMetadata
 
+loggerdb = client["LoggerDB"]
+log_collection = loggerdb.loggingCollection
 
 # ===================================
 # Database decoding utility
@@ -65,3 +67,42 @@ async def get_sensors():
         sensors.append(sensor_helper_read(x))
 
     return {"status": "200", "data": sensors}
+
+
+@router.get("/{service}/logs", dependencies=[Depends(JWTBearer())])
+async def get_logs(token: Annotated[str, Depends(JWTBearer())], service: str):
+    curr_user = decodeJWT(token)
+
+    # find all data in DB for given app name
+    cursor = log_collection.find({"service_name": service}, sort=[("timestamp", 1)])
+
+    output = ""
+    json_res = []
+    # Sort the documents on the basis of their created time and display onto stdout
+    for document in cursor:
+        output += f'<br>{document["timestamp"]} | {document["level"]} <b>({document["app_name"]}, {document["user_id"]})</b>: {document["msg"]}'
+        json_res.append(
+            {
+                "timestamp": document["timestamp"],
+                "level": document["level"],
+                "msg": document["msg"],
+            }
+        )
+
+    HTML_output = (
+        f"""        
+    <html>
+    <head>
+        <title>{service} Logs</title>
+    </head>
+    <body>
+    <h2>{service} Logs</h2>
+    """
+        + output
+        + """
+    </body>
+    </html>
+    """
+    )
+
+    return json_res

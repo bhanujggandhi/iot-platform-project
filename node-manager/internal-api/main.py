@@ -20,6 +20,7 @@ MONGO_URI = config("mongoKey")
 app = FastAPI(
     title="Internal APIs",
     description="This API module contains all the platform's internal APIs that will be required by platform to work",
+    docs_url="/",
 )
 
 origins = [
@@ -48,26 +49,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 app.include_router(user.router, prefix="/user", tags=["user"])
 app.include_router(deployment.router, prefix="/deploy", tags=["deployement"])
 app.include_router(apps.router, prefix="/apps", tags=["Deployed App"])
 app.include_router(features.router, prefix="/features", tags=["Platform Features"])
 
 
-@app.get("/ping", tags=["test"])
+@app.get("/", tags=["test"])
+async def monitoring_test():
+    return {"name": "internal-api"}
+
+
+@app.get("/ping/internal-api", tags=["test"])
 async def monitoring_test():
     return {"name": "internal-api", "data": {"timestamp": time.time()}}
-
-
-@app.get("/apitoken/generate/{userid}", tags=["auth"])
-async def generate_token(userid: str):
-    return signJWT(userid)
-
-
-@app.get("/apitoken/verify/{token}", tags=["auth"])
-async def verify_token(token: str):
-    return decodeJWT(token)
 
 
 if __name__ == "__main__":

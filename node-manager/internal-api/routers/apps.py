@@ -6,7 +6,7 @@ import requests
 from bson import ObjectId
 from decouple import config
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response, RedirectResponse
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from utils.jwt_bearer import JWTBearer
@@ -23,14 +23,17 @@ produce = Produce()
 CONTAINER_NAME = config("deploy_app_container_name")
 mongokey = config("mongoKey")
 client = MongoClient(mongokey)
+
+
+# ===================================
+# Database decoding utility
+# ===================================
 db = client["platform"]
 app_collection = db.App
 user_collection = db.User
 
 loggerdb = client["LoggerDB"]
 log_collection = loggerdb.loggingCollection
-# ===================================
-# Database decoding utility
 
 
 def user_helper_read(user) -> dict:
@@ -120,8 +123,8 @@ async def register_new_app(
         return {"message": "App with this name already exists.", "status_code": 400}
 
 
-@router.post("/{appid}/stop", dependencies=[Depends(JWTBearer())])
-async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
+@router.post("/{appname}/stop", dependencies=[Depends(JWTBearer())])
+async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
     curr_app = app_collection.find_one(
         {"name": appid, "user": ObjectId(curr_user["id"])}
@@ -147,7 +150,7 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appid: str):
     return {"status": 200, "data": "We have stopped your app successfully"}
 
 
-@router.post("/{appid}/start", dependencies=[Depends(JWTBearer())])
+@router.post("/{appname}/start", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
     curr_app = app_collection.find_one(
@@ -176,7 +179,7 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str
     return {"status": 200, "data": "We have started your app successfully"}
 
 
-@router.post("/{appid}/remove", dependencies=[Depends(JWTBearer())])
+@router.post("/{appname}/remove", dependencies=[Depends(JWTBearer())])
 async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
     curr_app = app_collection.find_one(
@@ -205,8 +208,8 @@ async def get_all_apps(token: Annotated[str, Depends(JWTBearer())], appname: str
     return {"status": 200, "data": "We have removed your app successfully"}
 
 
-@router.get("/{appid}/logs", dependencies=[Depends(JWTBearer())])
-async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = None):
+@router.get("/{appname}/logs", dependencies=[Depends(JWTBearer())])
+async def get_logs(token: Annotated[str, Depends(JWTBearer())], appname: str):
     curr_user = decodeJWT(token)
     curr_app = app_collection.find_one(
         {"name": appname, "user": ObjectId(curr_user["id"])}
@@ -221,21 +224,29 @@ async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = 
         return {"status": 401, "data": f"You are not authorized to do that"}
 
     # find all data in DB for given app name
-    cursor = log_collection.find({"app_name": app_name}, sort=[("timestamp", 1)])
+    cursor = log_collection.find({"app_name": appname}, sort=[("timestamp", 1)])
 
     output = ""
+    json_res = []
     # Sort the documents on the basis of their created time and display onto stdout
     for document in cursor:
         output += f'<br>{document["timestamp"]} | {document["level"]} <b>({document["app_name"]}, {document["user_id"]})</b>: {document["msg"]}'
+        json_res.append(
+            {
+                "timestamp": document["timestamp"],
+                "level": document["level"],
+                "msg": document["msg"],
+            }
+        )
 
     HTML_output = (
         f"""        
     <html>
     <head>
-        <title>{app_name} Logs</title>
+        <title>{appname} Logs</title>
     </head>
     <body>
-    <h2>{app_name} Logs</h2>
+    <h2>{appname} Logs</h2>
     """
         + output
         + """
@@ -244,30 +255,26 @@ async def get_logs(token: Annotated[str, Depends(JWTBearer())], app_name: str = 
     """
     )
 
-    return HTMLResponse(content=HTML_output, status_code=200)
+    return json_res
 
 
-@router.get("/app/{app_name:path}")
-async def apps(app_name: str = Path(...)):
-    print(app_name)
-    arr = app_name.split("/")
+@router.get("/{appname:path}")
+async def apps(appname: str = Path(...)):
+    print(appname)
+    arr = appname.split("/")
     ret = app_collection.find_one({"name": arr[0]})
-    if ret == None:
-        return HTMLResponse(
-            content="""<html><head><title>some title</title></head><body><h1>Invalid Application</h1></body></html>""",
-            status_code=400,
-        )
+    if ret is None:
+        raise HTTPException(status_code=400, detail="Invalid Application")
+    elif not ret["active"]:
+        raise HTTPException(status_code=400, detail="Application is not Running")
     else:
-        if ret["active"] == False:
-            return HTMLResponse(
-                content="""<html><head><title>some title</title></head><body><h1>Application is not Running</h1></body></html>""",
-                status_code=400,
-            )
-        else:
-            url = "http://" + ret["ip"] + ":" + str(ret["port"])
-            for i in range(1, len(arr)):
-                url += "/" + str(arr[i])
-            print(url)
-            response = requests.get(url).json()
-
-    return HTMLResponse(content=response, status_code=200)
+        url = "http://" + ret["ip"] + ":" + str(ret["port"])
+        for i in range(1, len(arr)):
+            url += "/" + str(arr[i])
+        # response = requests.get(url)
+        print(url)
+        # headers = dict(response.headers)
+        return RedirectResponse(url)
+        # return Response(
+        #     content=response.content, headers=headers, status_code=response.status_code
+        # )
