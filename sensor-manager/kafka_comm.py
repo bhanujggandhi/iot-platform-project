@@ -52,7 +52,6 @@ def utilise_message(value):
         "data_flag": data_flag
     }
 
-    print('parms', parms)
     response = fetchdata(parms)
     produce.push(src, "", json.dumps(response))
 
