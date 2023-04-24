@@ -14,14 +14,4 @@ message = {
 }
 
 produce.push("topic_node_manager", "", json.dumps(message))
-
-# message = {
-#     "sensorId": "ifbouefvb",
-#     "duration": 10,
-#     "fetchType": "RT",
-#     "startTime": 1,
-#     "endTime": 10,
-#     "src": "topic_internal_api"
-# }
-
-# produce.push("topic_sensor_manager", "", json.dumps(message))
+print("Signal sent to node manager to start all the modules")

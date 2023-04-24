@@ -138,23 +138,9 @@ def deploy_app(appname: str, appid: str, userid: str):
     logger.log(SERVICE_NAME, 1, "Allocating resouces....")
 
     cmd = f"docker stop {appname} && docker rm {appname}"
-    res = os.system(cmd)
-    if res != 0:
-        logger.log(
-            SERVICE_NAME,
-            4,
-            f"{res} error code occurs from the VM Machine, please check",
-        )
-        return {"success": False, "message": "Internal Server Error"}
+    os.system(cmd)
     cmd = f"docker rmi {appname}"
-    res = os.system(cmd)
-    if res != 0:
-        logger.log(
-            SERVICE_NAME,
-            4,
-            f"{res} error code occurs from the VM Machine, please check",
-        )
-        return {"success": False, "message": "Internal Server Error"}
+    os.system(cmd)
     generate_docker_image(appname)
     cmd = f"docker build -t {appname} {appname}"
     res = os.system(cmd)
@@ -548,6 +534,7 @@ Expected json from producer of topic topic_node_manager
 
 
 if __name__ == "__main__":
+    print("Node Manager Started")
     consume = Consume(TOPIC)
     thread = threading.Thread(target=heartbeat_service.start)
     thread.start()
