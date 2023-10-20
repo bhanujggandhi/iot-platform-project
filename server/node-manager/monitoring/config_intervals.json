@@ -1,0 +1,13 @@
+{
+  "PRODUCER_SLEEP_TIME": 20,
+  "CONSUMER_SLEEP_TIME": 1,
+  "API_SLEEP_TIME": 30,
+  "MAIN_SLEEP_TIME": 1,
+  "TRACKING_INTERVAL": 25,
+  "TIMEOUT_THRESHOLD": 122,
+  "IP": "127.0.0.1",
+  "PORT": "8000",
+  "MY_TOPIC": "topic_monitoring",
+  "TOPIC_NOTIFICATION": "topic_notification",
+  "SERVICE_NAME": "monitoring-service"
+}

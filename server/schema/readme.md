@@ -9,5 +9,5 @@
 5. db = client['YOUR DB NAME']
 6. collection = db.YOUR_COLLECTION_NAME
 7. collection.insert_one({
- FOLLOW SCHEMA TO INSERT
- })
+   FOLLOW SCHEMA TO INSERT
+   })

@@ -1,5 +1,3 @@
-# (DB:ActiveNodeDB , collection:activeNodeCollection)
-# from decoupl
 from pymongo import MongoClient
 import pymongo
 from decouple import config
@@ -34,6 +32,7 @@ ActiveNodeSchema = {
         },
     }
 }
+
 # (DB:userDB, collection:userCollection )
 userCollectionSchema = {
     "$jsonSchema": {
@@ -61,7 +60,6 @@ userCollectionSchema = {
 }
 
 # (DB:userDB , collection:ApiCollection)
-
 ApiCollectionSchema = {
     "validator": {
         "$jsonSchema": {
@@ -77,7 +75,6 @@ ApiCollectionSchema = {
 }
 
 # (DB:userDB , collection:AppCollection )
-
 AppCollectionSchema = {
     "validator": {
         "$jsonSchema": {
@@ -96,7 +93,6 @@ AppCollectionSchema = {
     }
 }
 # (DB:userDB , collection:TrafficCollection )
-
 TrafficCollectionSchema = {
     "validator": {
         "$jsonSchema": {
@@ -129,7 +125,6 @@ TrafficCollectionSchema = {
 
 
 # (DB:platform , collection:Module_Status)
-
 Module_StatusSchema = {
     "validator": {
         "$jsonSchema": {

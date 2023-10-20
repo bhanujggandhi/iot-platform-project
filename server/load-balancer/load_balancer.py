@@ -1,10 +1,3 @@
-# import requests
-
-# if __name__ == "__main__":
-#     print('hello')
-#     x = requests.get('https://w3schools.com/python/demopage.htm')
-#     print(x.text)
-
 import pymongo
 import sys
 
@@ -18,22 +11,21 @@ mydatabase = client["NodeInfo"]
 print(mydatabase.list_collection_names())
 mycollection = mydatabase["node_info"]
 
-mydict = {
-    "ip": "194.56.2.3",
-    "port": 200,
-    "serverStatus": 1,
-    "cpuUsage": 0.95,
-    "memUsage": 0.45,
-    "runningResourceCount": 4,
-}
+# FOR TESTING
+# mydict = {
+#     "ip": "194.56.2.3",
+#     "port": 200,
+#     "serverStatus": 1,
+#     "cpuUsage": 0.95,
+#     "memUsage": 0.45,
+#     "runningResourceCount": 4,
+# }
 
-mycollection.insert_one(mydict)
+# mycollection.insert_one(mydict)
 
 myquery = {"serverStatus": 1}
 mydoc = mycollection.find(myquery)
 
-# for x in mydoc:
-#   print(x)
 
 import json
 
@@ -53,7 +45,6 @@ def get_ip_port():
         if x["cpuUsage"] < minLoad:
             minLoad = x["cpuUsage"]
             ip, port = x["ip"], x["port"]
-        # print(x['cpuUsage'])
         print(x)
 
     if ip is None and port is None:
