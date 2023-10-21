@@ -212,13 +212,13 @@ The project is organized as follows:
 
 The communication diagram provides a clear representation of the information flow within the Distributed IoT Application Platform. It emphasizes the interactions between various components and services to ensure smooth data transmission and processing.
 
-![Communication Diagram](https://github.com/bhanujggandhi/iot-platform-project/blob/main/artifacts/Communication%20Model.jpg)
+![Communication Diagram](https://github.com/bhanujggandhi/iot-platform-project/blob/main/documentation/artifacts/Communication%20Model.jpg)
 
 ## Architecture Diagram
 
 To understand the structural layout and interdependencies of the platform components, refer to the architecture diagram. It gives a comprehensive view of the system design, making it easier for users and developers to grasp the platform's intricacies.
 
-![Architecture Diagram](https://github.com/bhanujggandhi/iot-platform-project/blob/main/artifacts/Architecture%20Diagram.jpg)
+![Architecture Diagram](https://github.com/bhanujggandhi/iot-platform-project/blob/main/documentation/artifacts/Architecture%20Diagram.jpg)
 
 ## Demo Video
 
