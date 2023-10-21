@@ -10,7 +10,8 @@ The primary purpose of the Distributed IoT Application Platform is to enable org
 
 Click the video below to watch the demo:
 
-![Demo Video](artifacts/demovideo.mp4)
+https://github.com/bhanujggandhi/iot-platform-project/assets/41260948/70dd75a6-11cc-42a9-814d-ee760bd8a3ef
+
 
 ## Communication Diagram
 
